@@ -1,0 +1,239 @@
+local themeColor = Color3.fromRGB(255, 182, 193)
+local visibleColor = Color3.fromRGB(0, 255, 0)
+local hiddenColor = Color3.fromRGB(255, 0, 0)
+local EquippedSkins = {}
+local connections = {}
+
+-- Combat Settings (V17.1 Defaults)
+local teamCheck = true 
+local fov = 120
+local aimbotEnabled = false
+local espEnabled = true
+local headAimEnabled = false
+local wallCheckEnabled = true
+local currentTarget = nil
+local currentTargetDistance = 0
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local visCache = {}
+
+-- [[ 1. V17.1 UNIVERSAL TEAM CHECK ]]
+local function isTeammate(player)
+    if player.Team and LocalPlayer.Team and player.Team == LocalPlayer.Team then return true end
+    if player.Team and LocalPlayer.Team and player.Team.Name == LocalPlayer.Team.Name then return true end
+    if player.TeamColor == LocalPlayer.TeamColor and player.TeamColor.Name ~= "White" then return true end
+    if player:GetAttribute("Team") and player:GetAttribute("Team") == LocalPlayer:GetAttribute("Team") then return true end
+    return false
+end
+
+-- [[ 2. V17.1 HEALTH BAR SYSTEM ]]
+local function applyHealth(char)
+    if char:FindFirstChild("HealthBar") then return end
+    local head = char:WaitForChild("Head", 5)
+    if not head then return end
+    local bb = Instance.new("BillboardGui", char)
+    bb.Name = "HealthBar"; bb.Adornee = head; bb.Size = UDim2.new(0, 40, 0, 4); bb.StudsOffset = Vector3.new(0, 2, 0); bb.AlwaysOnTop = true
+    local bg = Instance.new("Frame", bb); bg.Size = UDim2.new(1, 0, 1, 0); bg.BackgroundColor3 = Color3.new(0,0,0); bg.BorderSizePixel = 0
+    local fill = Instance.new("Frame", bg); fill.Name = "Fill"; fill.Size = UDim2.new(1, 0, 1, 0); fill.BackgroundColor3 = Color3.new(0,1,0); fill.BorderSizePixel = 0
+    local hum = char:WaitForChild("Humanoid")
+    hum.HealthChanged:Connect(function()
+        local p = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+        fill.Size = UDim2.new(p, 0, 1, 0)
+        fill.BackgroundColor3 = Color3.fromHSV(p * 0.3, 1, 1)
+    end)
+end
+
+-- [[ 3. V17.1 VISIBILITY CHECK ]]
+local function isVisibleImmortal(player)
+    local char = player.Character
+    if not char then return false end
+    local head = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+    if not head then return false end
+    local parts = Camera:GetPartsObscuringTarget({head.Position}, {LocalPlayer.Character, char})
+    local anyVisible = (#parts == 0)
+    if anyVisible then visCache[player] = tick() return true
+    elseif visCache[player] and (tick() - visCache[player]) < 0.25 then return true end
+    return false
+end
+
+-- [[ 4. CORE ENGINE (COMBAT + SKINS) ]]
+connections.Main = RunService.RenderStepped:Connect(function()
+    -- ESP & HEALTH
+    for _, player in pairs(Players:GetPlayers()) do
+        if player == LocalPlayer then continue end
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local h = char:FindFirstChild("Highlight_Elite")
+            local shouldShow = espEnabled and (not teamCheck or not isTeammate(player))
+            
+            if shouldShow then
+                if not h then
+                    h = Instance.new("Highlight", char)
+                    h.Name = "Highlight_Elite"; h.FillTransparency = 0; h.OutlineColor = Color3.new(1,1,1)
+                end
+                h.Enabled = true
+                h.FillColor = isVisibleImmortal(player) and visibleColor or hiddenColor
+                applyHealth(char)
+                if char:FindFirstChild("HealthBar") then char.HealthBar.Enabled = true end
+            else
+                if h then h.Enabled = false end
+                if char:FindFirstChild("HealthBar") then char.HealthBar.Enabled = false end
+            end
+        end
+    end
+-- AIMBOT (V17.1 REFINED)
+    if aimbotEnabled and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+        local center = Camera.ViewportSize / 2
+        
+        -- Target Validation
+        if currentTarget then
+            local char = currentTarget.Character
+            local hum = char and char:FindFirstChild("Humanoid")
+            local part = char and (headAimEnabled and char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart"))
+            
+            if not char or not hum or hum.Health <= 0 or not part or (teamCheck and isTeammate(currentTarget)) then
+                currentTarget = nil
+            elseif wallCheckEnabled and not isVisibleImmortal(currentTarget) then
+                currentTarget = nil
+            else
+                local pos, on = Camera:WorldToViewportPoint(part.Position)
+                local d = (Vector2.new(pos.X, pos.Y) - center).Magnitude
+                if not on or d > fov * 1.5 then 
+                    currentTarget = nil
+                end
+            end
+        end
+
+        -- Target Selection
+        if not currentTarget then
+            local closest, dist = nil, math.huge
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                    if not teamCheck or not isTeammate(p) then
+                        local part = headAimEnabled and p.Character:FindFirstChild("Head") or p.Character:FindFirstChild("HumanoidRootPart")
+                        if part then 
+                            if wallCheckEnabled and not isVisibleImmortal(p) then continue end
+                            local pos, on = Camera:WorldToViewportPoint(part.Position)
+                            local d = (Vector2.new(pos.X, pos.Y) - center).Magnitude
+                            if on and d <= fov and d < dist then 
+                                closest = p
+                                dist = d 
+                            end
+                        end
+                    end
+                end
+            end
+            currentTarget = closest
+        end
+
+        -- Lock On
+        if currentTarget and currentTarget.Character then
+            local part = headAimEnabled and currentTarget.Character:FindFirstChild("Head") or currentTarget.Character:FindFirstChild("HumanoidRootPart")
+            if part then
+                local playerPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
+                currentTargetDistance = (part.Position - playerPos).Magnitude
+                
+                local predictionFactor = math.clamp(0.05 + (currentTargetDistance / 2000), 0.02, 0.12)
+                local predictedPosition = part.Position + (part.Velocity * predictionFactor)
+                
+                Camera.CFrame = Camera.CFrame:Lerp(CFrame.lookAt(Camera.CFrame.Position, predictedPosition), 0.2)
+            end
+        end
+    else
+        currentTarget = nil
+    end
+-- SKIN CHANGER
+    pcall(function()
+        local vm = Camera:FindFirstChild("Viewmodel") or Camera:FindFirstChildOfClass("Model")
+        if vm and EquippedSkins[vm.Name] then
+            local weapon = vm:FindFirstChild("Weapon")
+            if weapon then
+                local skinName = EquippedSkins[vm.Name]
+                local folder = ReplicatedStorage.Assets.Skins[vm.Name][skinName].Camera["Factory New"]
+                for _, d in pairs(folder:GetChildren()) do
+                    local part = weapon:FindFirstChild(d.Name, true)
+                    if part and part:IsA("MeshPart") and not part:FindFirstChild("EliteSkin") then
+                        for _, o in pairs(part:GetChildren()) do if o:IsA("SurfaceAppearance") then o:Destroy() end end
+                        local n = d:Clone(); n.Name = "EliteSkin"; n.Parent = part; part.TextureID = ""
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+-- [[ 5. UI CONSTRUCTION ]]
+local SkinMap = {}
+pcall(function() SkinMap = HttpService:JSONDecode(readfile("SkinLibrary_Map.json")) end)
+
+local function build()
+    if game.CoreGui:FindFirstChild("Crystal_Legacy") then game.CoreGui.Crystal_Legacy:Destroy() end
+    local sg = Instance.new("ScreenGui", game.CoreGui); sg.Name = "Crystal_Legacy"
+    local main = Instance.new("Frame", sg); main.Size = UDim2.new(0, 480, 0, 350); main.Position = UDim2.new(0.5, -240, 0.5, -175); main.BackgroundColor3 = Color3.fromRGB(15,15,15); main.Active = true; main.Draggable = true
+    Instance.new("UICorner", main); Instance.new("UIStroke", main).Color = themeColor
+    
+    local sidebar = Instance.new("Frame", main); sidebar.Size = UDim2.new(0, 110, 1, 0); sidebar.BackgroundColor3 = Color3.fromRGB(10,10,10); Instance.new("UICorner", sidebar)
+    local container = Instance.new("Frame", main); container.Size = UDim2.new(1, -120, 1, -10); container.Position = UDim2.new(0, 115, 0, 5); container.BackgroundTransparency = 1
+    
+    local pages = {}
+    local function createPage(name)
+        local p = Instance.new("ScrollingFrame", container); p.Size = UDim2.new(1,0,1,0); p.BackgroundTransparency = 1; p.Visible = false; p.CanvasSize = UDim2.new(0,0,10,0); p.ScrollBarThickness = 2; pages[name] = p
+        local b = Instance.new("TextButton", sidebar); b.Size = UDim2.new(1,0,0,35); b.Text = name:upper(); b.BackgroundColor3 = Color3.fromRGB(20,20,20); b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.GothamBold
+        b.MouseButton1Click:Connect(function() for _, pg in pairs(pages) do pg.Visible = false end p.Visible = true end)
+        Instance.new("UIListLayout", p).Padding = UDim.new(0, 2)
+    end
+
+    createPage("Combat"); createPage("Skins"); createPage("Inventory")
+    pages.Combat.Visible = true; Instance.new("UIListLayout", sidebar).Padding = UDim.new(0,5)
+-- COMBAT
+    local function tgl(txt, val, cb)
+        local b = Instance.new("TextButton", pages.Combat); b.Size = UDim2.new(1,-10,0,32); b.BackgroundColor3 = Color3.fromRGB(25,25,25); b.Text = txt .. ": " .. (val and "ON" or "OFF"); b.TextColor3 = val and Color3.new(0,1,0) or Color3.new(1,0,0); b.Font = Enum.Font.GothamBold
+        b.MouseButton1Click:Connect(function() val = not val; cb(val); b.Text = txt .. ": " .. (val and "ON" or "OFF"); b.TextColor3 = val and Color3.new(0,1,0) or Color3.new(1,0,0) end)
+        Instance.new("UICorner", b)
+    end
+    tgl("AIMLOCK MASTER", aimbotEnabled, function(v) aimbotEnabled = v end)
+    tgl("HEAD AIM ONLY", headAimEnabled, function(v) headAimEnabled = v end)
+    tgl("WALL CHECK (VIS)", wallCheckEnabled, function(v) wallCheckEnabled = v end)
+    tgl("SOLID ESP SYSTEM", espEnabled, function(v) espEnabled = v end)
+    tgl("TEAM CHECK (CLEAN)", teamCheck, function(v) teamCheck = v end)
+    
+    local dLabel = Instance.new("TextLabel", pages.Combat); dLabel.Size = UDim2.new(1,-10,0,20); dLabel.BackgroundTransparency = 1; dLabel.TextColor3 = themeColor; dLabel.Font = Enum.Font.GothamBold; dLabel.TextSize = 12; dLabel.Text = "TARGET DISTANCE: N/A"
+    spawn(function()
+        while wait(0.1) do
+            if currentTarget and currentTargetDistance then
+                dLabel.Text = "TARGET DISTANCE: " .. math.floor(currentTargetDistance) .. "m"
+            else
+                dLabel.Text = "TARGET DISTANCE: N/A"
+            end
+        end
+    end)
+
+    local exit = Instance.new("TextButton", pages.Combat); exit.Size = UDim2.new(1,-10,0,32); exit.BackgroundColor3 = Color3.fromRGB(60,20,20); exit.Text = "TERMINATE SCRIPT"; exit.TextColor3 = Color3.new(1,1,1); exit.Font = Enum.Font.GothamBold
+    exit.MouseButton1Click:Connect(function() for _, c in pairs(connections) do c:Disconnect() end sg:Destroy() end); Instance.new("UICorner", exit)
+
+    -- SKINS (Accordion)
+    local openCat = nil
+    for weaponName, skins in pairs(SkinMap) do
+        local catBtn = Instance.new("TextButton", pages.Skins); catBtn.Size = UDim2.new(1, -10, 0, 30); catBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); catBtn.Text = weaponName; catBtn.TextColor3 = themeColor; catBtn.Font = Enum.Font.GothamBold; Instance.new("UICorner", catBtn)
+        local skinList = Instance.new("Frame", pages.Skins); skinList.Size = UDim2.new(1, -10, 0, 0); skinList.Visible = false; Instance.new("UIListLayout", skinList).Padding = UDim.new(0, 2)
+        catBtn.MouseButton1Click:Connect(function()
+            if openCat and openCat ~= skinList then openCat.Visible = false; openCat.Size = UDim2.new(1, -10, 0, 0) end
+            skinList.Visible = not skinList.Visible; skinList.Size = skinList.Visible and UDim2.new(1, -10, 0, #skins * 27) or UDim2.new(1, -10, 0, 0); openCat = skinList.Visible and skinList or nil
+        end)
+        for _, skin in pairs(skins) do
+            local sBtn = Instance.new("TextButton", skinList); sBtn.Size = UDim2.new(1, 0, 0, 25); sBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); sBtn.Text = "   + " .. skin.Name; sBtn.TextColor3 = Color3.new(1, 1, 1); sBtn.Font = Enum.Font.GothamMedium; sBtn.TextSize = 10
+            sBtn.MouseButton1Click:Connect(function() EquippedSkins[weaponName] = skin.Name end)
+        end
+    end
+
+    connections.K = UserInputService.InputBegan:Connect(function(i) if i.KeyCode == Enum.KeyCode.K then main.Visible = not main.Visible end end)
+end
+
+build()
