@@ -352,7 +352,6 @@ end
 
 local function applyWeaponSkin(model)
     if not model or not SkinChangerEnabled or not isAlive_Skin() then return end
-return end
 local skinName = SelectedSkins[model.Name]
     if not skinName then return end
 
