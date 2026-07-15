@@ -1,0 +1,186 @@
+-- Аимбот для Murder Mystery 2
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local LocalPlayer = Players.LocalPlayer
+
+-- Настройки
+local AimbotEnabled = true
+local AimKey = Enum.UserInputType.MouseButton2 -- Правая кнопка мыши
+local FOV = 300 -- Радиус захвата цели в пикселях
+local Smoothness = 0.15 -- Плавность наведения (0 - мгновенно, 1 - очень медленно)
+local TargetTeam = "Murderer" -- Кого ищем: "Murderer", "Sheriff", "Innocent", "All"
+
+-- Функция определения роли игрока
+local function GetPlayerRole(player)
+    local character = player.Character
+    if not character then return nil end
+    
+    -- Проверка по наличию ножа (убийца)
+    for _, child in pairs(character:GetChildren()) do
+        if child:IsA("Tool") then
+            local toolName = child.Name:lower()
+            if toolName:find("knife") or toolName:find("blade") or toolName:find("knife") then
+                -- У убийцы обычно есть нож
+                local handle = child:FindFirstChild("Handle")
+                if handle then
+                    return "Murderer"
+                end
+            elseif toolName:find("gun") or toolName:find("revolver") or toolName:find("pistol") then
+                return "Sheriff"
+            end
+        end
+    end
+    
+    -- Проверка по цвету имени (в некоторых версиях MM2)
+    local head = character:FindFirstChild("Head")
+    if head then
+        local highlight = head:FindFirstChildOfClass("Highlight")
+        if highlight then
+            local color = highlight.FillColor
+            if color == Color3.new(1, 0, 0) then return "Murderer"
+            elseif color == Color3.new(0, 0, 1) then return "Sheriff"
+            end
+        end
+    end
+    
+    return "Innocent"
+end
+
+-- Функция получения ближайшей цели
+local function GetClosestTarget()
+    local closest = nil
+    local shortestDistance = FOV
+    local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local role = GetPlayerRole(player)
+            if role then
+                -- Фильтр по роли
+                if TargetTeam == "All" or role == TargetTeam or (TargetTeam == "Murderer" and role == "Murderer") then
+                    local head = player.Character:FindFirstChild("Head")
+                    local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+                    local targetPart = head or humanoidRootPart
+                    
+                    if targetPart then
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+                        if onScreen then
+                            local distance = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+                            
+                            -- Проверка через Raycast на видимость
+                            local rayParams = RaycastParams.new()
+                            rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+                            rayParams.FilterDescendantsInstances = {LocalPlayer.Character}
+                            
+                            local rayOrigin = Camera.CFrame.Position
+                            local rayDirection = (targetPart.Position - rayOrigin).Unit * 500
+                            local rayResult = workspace:Raycast(rayOrigin, rayDirection, rayParams)
+                            
+                            local isVisible = false
+                            if rayResult then
+                                isVisible = rayResult.Instance:IsDescendantOf(player.Character)
+end
+                            
+                            if distance < shortestDistance and isVisible then
+                                shortestDistance = distance
+                                closest = {
+                                    part = targetPart,
+                                    player = player,
+                                    role = role
+                                }
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    return closest
+end
+
+-- Основной цикл аимбота
+local function AimbotLoop()
+    if not AimbotEnabled then return end
+    if not UserInputService:IsMouseButtonPressed(AimKey) then return end
+    
+    local target = GetClosestTarget()
+    if target then
+        local targetScreenPos = Camera:WorldToViewportPoint(target.part.Position)
+        local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        
+        -- Расчет движения мыши с плавностью
+        local targetPos2D = Vector2.new(targetScreenPos.X, targetScreenPos.Y)
+        local mouseMove = (targetPos2D - screenCenter) * Smoothness
+        
+        -- Перемещение мыши
+        mousemoverel(mouseMove.X, mouseMove.Y)
+    end
+end
+
+-- Привязка к рендерингу
+RunService:BindToRenderStep("MM2Aimbot", 1, AimbotLoop)
+
+-- GUI для управления
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local ToggleButton = Instance.new("TextButton")
+local TargetLabel = Instance.new("TextLabel")
+
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0, 200, 0, 120)
+Frame.Position = UDim2.new(0, 10, 0, 10)
+Frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+
+Title.Parent = Frame
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+Title.Text = "MM2 Аимбот"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
+
+ToggleButton.Parent = Frame
+ToggleButton.Size = UDim2.new(0.8, 0, 0, 35)
+ToggleButton.Position = UDim2.new(0.1, 0, 0, 40)
+ToggleButton.Text = "ВКЛ/ВЫКЛ (ПКМ)"
+ToggleButton.TextColor3 = Color3.new(1, 1, 1)
+ToggleButton.BackgroundColor3 = Color3.new(0.3, 0.8, 0.3)
+ToggleButton.Font = Enum.Font.SourceSans
+ToggleButton.TextSize = 14
+
+TargetLabel.Parent = Frame
+TargetLabel.Size = UDim2.new(1, 0, 0, 30)
+TargetLabel.Position = UDim2.new(0, 0, 0, 85)
+TargetLabel.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
+TargetLabel.Text = "Цель: Убийца"
+TargetLabel.TextColor3 = Color3.new(1, 0.3, 0.3)
+TargetLabel.Font = Enum.Font.SourceSans
+TargetLabel.TextSize = 14
+
+ToggleButton.MouseButton1Click:Connect(function()
+    AimbotEnabled = not AimbotEnabled
+    if AimbotEnabled then
+        ToggleButton.Text = "Аимбот: ВКЛ"
+        ToggleButton.BackgroundColor3 = Color3.new(0.3, 0.8, 0.3)
+    else
+        ToggleButton.Text = "Аимбот: ВЫКЛ"
+        ToggleButton.BackgroundColor3 = Color3.new(0.8, 0.3, 0.3)
+    end
+end)
+
+-- Уведомление о загрузке
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "АИМБОТ ЗАГРУЖЕН",
+    Text = "Правая кнопка мыши для наведения на убийцу",
+    Duration = 5
+})
+
+print("[АБИБОК] Аимбот для MM2 активирован")
