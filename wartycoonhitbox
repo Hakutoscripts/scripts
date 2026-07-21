@@ -1,0 +1,198 @@
+_G.HeadSize = 3
+_G.HitboxEnabled = true
+_G.HitboxKey = "RightShift"
+
+local plrs = game:GetService("Players")
+local uis = game:GetService("UserInputService")
+local lp = plrs.LocalPlayer
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.Name = "HitboxIndicator"
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true
+
+local Indicator = Instance.new("Frame", ScreenGui)
+Indicator.Size = UDim2.new(0, 4, 0, 4)
+Indicator.Position = UDim2.new(1, -6, 0, 6)
+Indicator.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+Indicator.BorderSizePixel = 0
+Indicator.BackgroundTransparency = 0.3
+Instance.new("UICorner", Indicator).CornerRadius = UDim.new(1, 0)
+
+local OriginalHeadData = {}
+
+local function SaveOriginalHead(char)
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+    
+    if not OriginalHeadData[char] then
+        OriginalHeadData[char] = {
+            Size = head.Size,
+            CanCollide = head.CanCollide,
+            Transparency = head.Transparency,
+            Massless = head.Massless,
+            Mesh = nil,
+            MeshScale = nil
+        }
+        
+        local mesh = head:FindFirstChildOfClass("SpecialMesh")
+        if mesh then
+            OriginalHeadData[char].Mesh = mesh
+            OriginalHeadData[char].MeshScale = mesh.Scale
+        end
+    end
+end
+
+local function RestoreHead(char)
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+    
+    local original = OriginalHeadData[char]
+    if original then
+        head.Size = original.Size
+        head.CanCollide = original.CanCollide
+        head.Transparency = original.Transparency
+        head.Massless = original.Massless
+        
+        if original.Mesh then
+            local mesh = head:FindFirstChildOfClass("SpecialMesh")
+            if mesh then
+                mesh.Scale = original.MeshScale
+            end
+        elseif original.MeshScale then
+            local mesh = head:FindFirstChildOfClass("SpecialMesh")
+            if mesh then
+                mesh.Scale = original.MeshScale
+            end
+        end
+        
+        for _, a in ipairs(char:GetChildren()) do
+            if a:IsA("Accessory") then
+                local han = a:FindFirstChild("Handle")
+                if han then
+                    han.CanTouch = true
+                    han.CanQuery = true
+                    local att = han:FindFirstChildOfClass("Attachment")
+                    if att then
+                        att.Position = Vector3.new(0, 0, 0)
+                    end
+                end
+            end
+        end
+        
+        OriginalHeadData[char] = nil
+    end
+end
+
+local function ApplyHitbox(char)
+    local h = char:FindFirstChild("Head")
+    if not h or not h:IsA("BasePart") then return end
+
+    SaveOriginalHead(char)
+
+    h.Size = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
+    h.CanCollide = false
+    h.Transparency = 0.01 
+    h.Massless = true
+
+    local m = h:FindFirstChildOfClass("SpecialMesh")
+    if not m then
+        m = Instance.new("SpecialMesh", h)
+    end
+
+    local s = 1.25 / _G.HeadSize
+    m.Scale = Vector3.new(s, s, s)
+    m.MeshType = Enum.MeshType.Head 
+
+    for _, a in ipairs(char:GetChildren()) do
+        if a:IsA("Accessory") then
+            local han = a:FindFirstChild("Handle")
+            if han then
+                han.CanTouch = false
+                han.CanQuery = false
+                local att = han:FindFirstChildOfClass("Attachment")
+                if att then
+                    att.Position = Vector3.new(0, 0, 0) 
+                end
+            end
+        end
+    end
+end
+
+local function ApplyToAll()
+    if not _G.HitboxEnabled then return end
+    for _, p in ipairs(plrs:GetPlayers()) do
+        if p ~= lp and p.Character then
+            pcall(function() ApplyHitbox(p.Character) end)
+        end
+    end
+end
+
+local function RestoreAll()
+    for _, p in ipairs(plrs:GetPlayers()) do
+        if p ~= lp and p.Character then
+            pcall(function() RestoreHead(p.Character) end)
+        end
+    end
+end
+
+plrs.PlayerAdded:Connect(function(p)
+    if p == lp then return end
+    p.CharacterAdded:Connect(function(char)
+        task.wait(0.5)
+        if _G.HitboxEnabled then
+            pcall(function() ApplyHitbox(char) end)
+        end
+    end)
+end)
+
+for _, p in ipairs(plrs:GetPlayers()) do
+    if p ~= lp then
+        p.CharacterAdded:Connect(function(char)
+            task.wait(0.5)
+            if _G.HitboxEnabled then
+                pcall(function() ApplyHitbox(char) end)
+            end
+        end)
+    end
+end
+
+local function UpdateIndicator()
+    if _G.HitboxEnabled then
+        Indicator.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        Indicator.BackgroundTransparency = 0.3
+    else
+        Indicator.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        Indicator.BackgroundTransparency = 0.3
+    end
+end
+
+uis.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        _G.HitboxEnabled = not _G.HitboxEnabled
+        UpdateIndicator()
+        
+        if _G.HitboxEnabled then
+            ApplyToAll()
+        else
+            RestoreAll()
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if _G.HitboxEnabled then
+            for _, p in ipairs(plrs:GetPlayers()) do
+                if p ~= lp and p.Character then
+                    pcall(function() ApplyHitbox(p.Character) end)
+                end
+            end
+        end
+        task.wait(0.5)
+    end
+end)
+
+UpdateIndicator()
