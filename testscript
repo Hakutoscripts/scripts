@@ -1,186 +1,503 @@
--- Аимбот для Murder Mystery 2
+--[[
+    🚀 МБР ДЛЯ ТЕЛЕФОНА - Fling Things and People
+    Описание: Превращает ракету в межконтинентальную баллистическую ракету
+    Управление: Кнопки на экране (подходит для телефона)
+]]
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
 local UserInputService = game:GetService("UserInputService")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
 
--- Настройки
-local AimbotEnabled = true
-local AimKey = Enum.UserInputType.MouseButton2 -- Правая кнопка мыши
-local FOV = 300 -- Радиус захвата цели в пикселях
-local Smoothness = 0.15 -- Плавность наведения (0 - мгновенно, 1 - очень медленно)
-local TargetTeam = "Murderer" -- Кого ищем: "Murderer", "Sheriff", "Innocent", "All"
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
 
--- Функция определения роли игрока
-local function GetPlayerRole(player)
-    local character = player.Character
+-- ===== НАСТРОЙКИ РАКЕТЫ =====
+local CONFIG = {
+    FlightSpeed = 400,           -- Скорость полета
+    ExplosionRadius = 40,        -- Радиус взрыва
+    ExplosionDamage = 200,       -- Урон от взрыва
+    FlightDuration = 10,         -- Макс. время полета (сек)
+    TrailEnabled = true,         -- Огненный след
+    AutoLaunch = false,          -- Автозапуск при взятии ракеты
+}
+
+-- ===== GUI ДЛЯ ТЕЛЕФОНА =====
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player.PlayerGui
+screenGui.ResetOnSpawn = false
+
+-- Функция для создания кнопки
+local function createButton(text, position, color, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 200, 0, 60)
+    frame.Position = position
+    frame.BackgroundColor3 = color or Color3.fromRGB(30, 30, 30)
+    frame.BackgroundTransparency = 0.3
+    frame.BorderSizePixel = 2
+    frame.BorderColor3 = Color3.fromRGB(255, 200, 50)
+    frame.Parent = screenGui
+    
+    -- Скругление углов
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = frame
+    
+    -- Текст кнопки
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 20
+    label.Font = Enum.Font.GothamBold
+    label.TextScaled = true
+    label.Parent = frame
+    
+    -- Анимация при нажатии
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or 
+           input.UserInputType == Enum.UserInputType.MouseButton1 then
+            frame.BackgroundTransparency = 0.1
+            frame.Size = UDim2.new(0, 195, 0, 55)
+            
+            -- Возвращаем обратно
+            task.wait(0.1)
+            frame.BackgroundTransparency = 0.3
+            frame.Size = UDim2.new(0, 200, 0, 60)
+            
+            if callback then callback() end
+        end
+    end)
+    
+    return frame
+end
+
+-- ===== СОЗДАНИЕ ИНТЕРФЕЙСА =====
+-- Главная панель
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 320, 0, 250)
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -125)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+mainFrame.BackgroundTransparency = 0.15
+mainFrame.BorderSizePixel = 3
+mainFrame.BorderColor3 = Color3.fromRGB(255, 100, 50)
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 20)
+corner.Parent = mainFrame
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 50)
+title.Position = UDim2.new(0, 0, 0, 5)
+title.BackgroundTransparency = 1
+title.Text = "🚀 МБР УПРАВЛЕНИЕ"
+title.TextColor3 = Color3.fromRGB(255, 200, 50)
+title.TextSize = 24
+title.Font = Enum.Font.GothamBold
+title.TextScaled = true
+title.Parent = mainFrame
+
+-- Статус ракеты
+local statusText = Instance.new("TextLabel")
+statusText.Size = UDim2.new(1, 0, 0, 35)
+statusText.Position = UDim2.new(0, 0, 0, 55)
+statusText.BackgroundTransparency = 1
+statusText.Text = "📡 Ожидание ракеты..."
+statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusText.TextSize = 16
+statusText.Font = Enum.Font.Gotham
+statusText.TextScaled = true
+statusText.Parent = mainFrame
+
+-- Кнопка запуска
+local launchBtn = createButton(
+    "🔥 ЗАПУСТИТЬ МБР",
+    UDim2.new(0.5, -100, 0, 110),
+    Color3.fromRGB(200, 50, 30),
+    function()
+        local rocket = getRocketInHand()
+        if rocket then
+            launchICBM(rocket)
+        else
+            statusText.Text = "❌ Возьми ракету в руки!"
+            statusText.TextColor3 = Color3.fromRGB(255, 50, 50)
+            task.wait(2)
+            statusText.Text = "📡 Ожидание ракеты..."
+            statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
+    end
+)
+launchBtn.Parent = mainFrame
+
+-- Кнопка автозапуска
+local autoBtn = createButton(
+    "⏳ АВТОЗАПУСК",
+    UDim2.new(0.5, -100, 0, 180),
+    Color3.fromRGB(50, 100, 200),
+    function()
+        CONFIG.AutoLaunch = not CONFIG.AutoLaunch
+        if CONFIG.AutoLaunch then
+            autoBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+            autoBtn:FindFirstChildOfClass("TextLabel").Text = "✅ АВТОЗАПУСК ВКЛ"
+            statusText.Text = "🔄 Автозапуск активирован!"
+            statusText.TextColor3 = Color3.fromRGB(50, 255, 50)
+        else
+            autoBtn.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
+            autoBtn:FindFirstChildOfClass("TextLabel").Text = "⏳ АВТОЗАПУСК"
+            statusText.Text = "📡 Автозапуск отключен"
+            statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
+        task.wait(1)
+        if CONFIG.AutoLaunch then
+            statusText.Text = "📡 Ожидание ракеты..."
+            statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+        end
+    end
+)
+autoBtn.Parent = mainFrame
+
+-- Кнопка закрытия
+local closeBtn = createButton(
+    "✕",
+    UDim2.new(1, -55, 0, 5),
+    Color3.fromRGB(60, 60, 60),
+    function()
+        screenGui:Destroy()
+    end
+)
+closeBtn.Size = UDim2.new(0, 45, 0, 45)
+closeBtn.Parent = mainFrame
+
+-- ===== ПОИСК РАКЕТЫ =====
+local function getRocketInHand()
     if not character then return nil end
     
-    -- Проверка по наличию ножа (убийца)
-    for _, child in pairs(character:GetChildren()) do
-        if child:IsA("Tool") then
-            local toolName = child.Name:lower()
-            if toolName:find("knife") or toolName:find("blade") or toolName:find("knife") then
-                -- У убийцы обычно есть нож
-                local handle = child:FindFirstChild("Handle")
-                if handle then
-                    return "Murderer"
-                end
-            elseif toolName:find("gun") or toolName:find("revolver") or toolName:find("pistol") then
-                return "Sheriff"
-            end
+    -- Проверяем инструменты в руках
+    local tool = character:FindFirstChildOfClass("Tool")
+    if tool then
+        if tool.Name:lower():find("rocket") then
+            return tool
+        end
+        -- Проверяем Handle
+        local handle = tool:FindFirstChild("Handle")
+        if handle and handle.Name:lower():find("rocket") then
+            return tool
         end
     end
     
-    -- Проверка по цвету имени (в некоторых версиях MM2)
-    local head = character:FindFirstChild("Head")
-    if head then
-        local highlight = head:FindFirstChildOfClass("Highlight")
-        if highlight then
-            local color = highlight.FillColor
-            if color == Color3.new(1, 0, 0) then return "Murderer"
-            elseif color == Color3.new(0, 0, 1) then return "Sheriff"
-            end
+    -- Проверяем, может ракета уже запущена
+    for _, child in pairs(workspace:GetChildren()) do
+        if child.Name:lower():find("rocket") and child:IsA("Part") then
+            return child
         end
     end
     
-    return "Innocent"
+    return nil
 end
 
--- Функция получения ближайшей цели
-local function GetClosestTarget()
-    local closest = nil
-    local shortestDistance = FOV
-    local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+-- ===== СОЗДАНИЕ ОГНЕННОГО СЛЕДА =====
+local function createTrail(part)
+    if not CONFIG.TrailEnabled then return end
     
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local role = GetPlayerRole(player)
-            if role then
-                -- Фильтр по роли
-                if TargetTeam == "All" or role == TargetTeam or (TargetTeam == "Murderer" and role == "Murderer") then
-                    local head = player.Character:FindFirstChild("Head")
-                    local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
-                    local targetPart = head or humanoidRootPart
-                    
-                    if targetPart then
-                        local screenPos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-                        if onScreen then
-                            local distance = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
-                            
-                            -- Проверка через Raycast на видимость
-                            local rayParams = RaycastParams.new()
-                            rayParams.FilterType = Enum.RaycastFilterType.Blacklist
-                            rayParams.FilterDescendantsInstances = {LocalPlayer.Character}
-                            
-                            local rayOrigin = Camera.CFrame.Position
-                            local rayDirection = (targetPart.Position - rayOrigin).Unit * 500
-                            local rayResult = workspace:Raycast(rayOrigin, rayDirection, rayParams)
-                            
-                            local isVisible = false
-                            if rayResult then
-                                isVisible = rayResult.Instance:IsDescendantOf(player.Character)
+    local trail = Instance.new("Trail")
+    trail.Parent = part
+    trail.Lifetime = 1.0
+    trail.MinLength = 1
+    trail.MaxLength = 20
+    trail.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.1),
+        NumberSequenceKeypoint.new(0.3, 0.4),
+        NumberSequenceKeypoint.new(0.7, 0.7),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+    trail.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.new(1, 0.9, 0.4)),
+        ColorSequenceKeypoint.new(0.4, Color3.new(1, 0.6, 0.1)),
+        ColorSequenceKeypoint.new(0.8, Color3.new(0.8, 0.2, 0)),
+        ColorSequenceKeypoint.new(1, Color3.new(0.4, 0, 0))
+    })
+    
+    -- Световой эффект
+    local light = Instance.new("PointLight")
+    light.Parent = part
+    light.Range = 25
+    light.Brightness = 4
+    light.Color = Color3.new(1, 0.6, 0.1)
 end
-                            
-                            if distance < shortestDistance and isVisible then
-                                shortestDistance = distance
-                                closest = {
-                                    part = targetPart,
-                                    player = player,
-                                    role = role
-                                }
-                            end
-                        end
-                    end
+
+-- ===== ВЗРЫВ =====
+local function createExplosion(position, radius, damage)
+    -- Основной взрыв
+    local explosion = Instance.new("Explosion")
+    explosion.Position = position
+    explosion.Radius = radius
+    explosion.BlastPressure = 800000
+    explosion.BlastImpulse = 200
+    explosion.DestroyJointRadiusPercent = 0.9
+    explosion.Parent = workspace
+    
+    -- Урон игрокам
+    if damage and damage > 0 then
+        local parts = workspace:GetPartsInPart(explosion, 1)
+        for _, part in pairs(parts) do
+            local hitChar = part:FindFirstAncestorOfClass("Model")
+            if hitChar and hitChar:FindFirstChild("Humanoid") then
+                local hum = hitChar:FindFirstChild("Humanoid")
+                if hum and hum ~= humanoid then
+                    hum:TakeDamage(damage)
                 end
             end
         end
     end
     
-    return closest
-end
-
--- Основной цикл аимбота
-local function AimbotLoop()
-    if not AimbotEnabled then return end
-    if not UserInputService:IsMouseButtonPressed(AimKey) then return end
+    Debris:AddItem(explosion, 0.3)
     
-    local target = GetClosestTarget()
-    if target then
-        local targetScreenPos = Camera:WorldToViewportPoint(target.part.Position)
-        local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-        
-        -- Расчет движения мыши с плавностью
-        local targetPos2D = Vector2.new(targetScreenPos.X, targetScreenPos.Y)
-        local mouseMove = (targetPos2D - screenCenter) * Smoothness
-        
-        -- Перемещение мыши
-        mousemoverel(mouseMove.X, mouseMove.Y)
+    -- Огненная сфера
+    local fire = Instance.new("Part")
+    fire.Shape = Enum.PartType.Ball
+    fire.Size = Vector3.new(radius * 0.5, radius * 0.5, radius * 0.5)
+    fire.Material = Enum.Material.Neon
+    fire.Color = Color3.new(1, 0.6, 0.1)
+    fire.Transparency = 0.2
+    fire.Anchored = true
+    fire.CanCollide = false
+    fire.Position = position
+    fire.Parent = workspace
+    
+    -- Анимация расширения сферы
+    local startSize = fire.Size
+    local goalSize = startSize * 3
+    local startTime = tick()
+    local duration = 0.8
+    
+    RunService.Heartbeat:Connect(function()
+        local elapsed = (tick() - startTime) / duration
+        if elapsed >= 1 then
+            fire:Destroy()
+            return
+        end
+        local size = startSize:Lerp(goalSize, elapsed)
+        fire.Size = size
+        fire.Transparency = 0.2 + (elapsed * 0.8)
+    end)
+    
+    -- Землетрясение (вибрация камеры)
+    local camera = workspace.CurrentCamera
+    if camera then
+        local originalPos = camera.CFrame.Position
+        for i = 1, 10 do
+            local offset = Vector3.new(
+                math.random(-3, 3),
+                math.random(-2, 2),
+                math.random(-3, 3)
+            )
+            camera.CFrame = CFrame.new(originalPos + offset)
+            task.wait(0.03)
+        end
+        camera.CFrame = CFrame.new(originalPos)
     end
 end
 
--- Привязка к рендерингу
-RunService:BindToRenderStep("MM2Aimbot", 1, AimbotLoop)
-
--- GUI для управления
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local ToggleButton = Instance.new("TextButton")
-local TargetLabel = Instance.new("TextLabel")
-
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-Frame.Parent = ScreenGui
-Frame.Size = UDim2.new(0, 200, 0, 120)
-Frame.Position = UDim2.new(0, 10, 0, 10)
-Frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
-Frame.BorderSizePixel = 0
-Frame.Active = true
-Frame.Draggable = true
-
-Title.Parent = Frame
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-Title.Text = "MM2 Аимбот"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 18
-
-ToggleButton.Parent = Frame
-ToggleButton.Size = UDim2.new(0.8, 0, 0, 35)
-ToggleButton.Position = UDim2.new(0.1, 0, 0, 40)
-ToggleButton.Text = "ВКЛ/ВЫКЛ (ПКМ)"
-ToggleButton.TextColor3 = Color3.new(1, 1, 1)
-ToggleButton.BackgroundColor3 = Color3.new(0.3, 0.8, 0.3)
-ToggleButton.Font = Enum.Font.SourceSans
-ToggleButton.TextSize = 14
-
-TargetLabel.Parent = Frame
-TargetLabel.Size = UDim2.new(1, 0, 0, 30)
-TargetLabel.Position = UDim2.new(0, 0, 0, 85)
-TargetLabel.BackgroundColor3 = Color3.new(0.15, 0.15, 0.15)
-TargetLabel.Text = "Цель: Убийца"
-TargetLabel.TextColor3 = Color3.new(1, 0.3, 0.3)
-TargetLabel.Font = Enum.Font.SourceSans
-TargetLabel.TextSize = 14
-
-ToggleButton.MouseButton1Click:Connect(function()
-    AimbotEnabled = not AimbotEnabled
-    if AimbotEnabled then
-        ToggleButton.Text = "Аимбот: ВКЛ"
-        ToggleButton.BackgroundColor3 = Color3.new(0.3, 0.8, 0.3)
+-- ===== ЗАПУСК МБР =====
+local function launchICBM(rocket)
+    local handle
+    
+    -- Определяем, что является ракетой
+    if rocket:IsA("Tool") then
+        handle = rocket:FindFirstChild("Handle")
+        if not handle then
+            statusText.Text = "❌ Ошибка: нет Handle!"
+            return
+        end
     else
-        ToggleButton.Text = "Аимбот: ВЫКЛ"
-        ToggleButton.BackgroundColor3 = Color3.new(0.8, 0.3, 0.3)
+        handle = rocket
+    end
+    
+    statusText.Text = "🔥 ЗАПУСК!"
+    statusText.TextColor3 = Color3.fromRGB(255, 100, 50)
+    
+    -- Отключаем физику
+    handle.Anchored = true
+    handle.CanCollide = false
+    
+    -- Направление полета
+    local direction = handle.CFrame.LookVector
+    if direction.Magnitude < 0.1 then
+        direction = Vector3.new(0, 0, -1)
+    end
+    
+    -- След
+    createTrail(handle)
+    
+    -- Звуковой эффект (если есть звук)
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://183948274" -- Звук ракеты
+    sound.Volume = 0.8
+    sound.Parent = handle
+    sound:Play()
+    Debris:AddItem(sound, 5)
+    
+    -- Частицы двигателя
+    local function createParticles()
+        for i = 1, 3 do
+            local particle = Instance.new("Part")
+            particle.Shape = Enum.PartType.Ball
+            particle.Size = Vector3.new(0.3 + math.random(), 0.3 + math.random(), 0.3 + math.random())
+            particle.Material = Enum.Material.Neon
+            particle.Color = Color3.new(1, 0.8, 0.2)
+            particle.Transparency = 0.3
+            particle.Anchored = true
+            particle.CanCollide = false
+            particle.Position = handle.Position - direction * 3 + Vector3.new(
+                math.random(-1, 1),
+                math.random(-1, 1),
+                math.random(-1, 1)
+            )
+            particle.Parent = workspace
+            Debris:AddItem(particle, 0.8)
+        end
+    end
+    
+    -- Основной полет
+    local startTime = tick()
+    local connection
+    local particleTimer = 0
+    
+    connection = RunService.Heartbeat:Connect(function(deltaTime)
+        local elapsed = tick() - startTime
+        
+        if elapsed > CONFIG.FlightDuration or not handle.Parent then
+            if connection then connection:Disconnect() end
+            return
+        end
+        
+        -- Движение
+        local velocity = direction * CONFIG.FlightSpeed * deltaTime
+        handle.Position = handle.Position + velocity
+        
+        -- Поворот
+        if velocity.Magnitude > 0.5 then
+            handle.CFrame = CFrame.lookAt(handle.Position, handle.Position + velocity)
+        end
+        
+        -- Частицы
+        particleTimer = particleTimer + deltaTime
+        if particleTimer > 0.04 then
+            particleTimer = 0
+            createParticles()
+        end
+        
+        -- Обновляем статус
+        local distance = (handle.Position - character.HumanoidRootPart.Position).Magnitude
+        if distance > 50 then
+            statusText.Text = "🚀 Полет... " .. math.floor(distance) .. "м"
+        end
+    end)
+    
+    -- Таймер автовзрыва
+    task.wait(CONFIG.FlightDuration)
+    if handle and handle.Parent then
+        if connection then connection:Disconnect() end
+        createExplosion(handle.Position, CONFIG.ExplosionRadius, CONFIG.ExplosionDamage)
+        handle:Destroy()
+        statusText.Text = "💥 ВЗРЫВ!"
+        statusText.TextColor3 = Color3.fromRGB(255, 50, 50)
+        task.wait(2)
+        statusText.Text = "📡 Готов к запуску"
+        statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end
+end
+
+-- ===== ОБНАРУЖЕНИЕ СТОЛКНОВЕНИЙ =====
+local function setupCollisionDetection(rocket)
+    if not rocket then return end
+    
+    local handle = rocket:IsA("Tool") and rocket:FindFirstChild("Handle") or rocket
+    if not handle then return end
+    
+    handle.Touched:Connect(function(hit)
+        if not handle.Parent then return end
+        local hitParent = hit.Parent
+        if hitParent == character or hitParent == player then return end
+        
+        -- Взрыв при столкновении
+        if handle.Anchored == false then return end
+        
+        createExplosion(handle.Position, CONFIG.ExplosionRadius, CONFIG.ExplosionDamage)
+        handle:Destroy()
+        statusText.Text = "💥 СТОЛКНОВЕНИЕ!"
+        statusText.TextColor3 = Color3.fromRGB(255, 50, 50)
+        task.wait(2)
+        statusText.Text = "📡 Готов к запуску"
+        statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+    end)
+end
+
+-- ===== АВТОЗАПУСК =====
+local function checkForRocket()
+    if CONFIG.AutoLaunch then
+        local rocket = getRocketInHand()
+        if rocket then
+            local handle = rocket:IsA("Tool") and rocket:FindFirstChild("Handle") or rocket
+            if handle and handle.Anchored == false then
+                statusText.Text = "🚀 Автозапуск!"
+                statusText.TextColor3 = Color3.fromRGB(50, 255, 50)
+                task.wait(0.5)
+                launchICBM(rocket)
+            end
+        end
+    end
+end
+
+-- ===== ОБНОВЛЕНИЕ СТАТУСА =====
+task.spawn(function()
+    while screenGui.Parent do
+        task.wait(1)
+        local rocket = getRocketInHand()
+        if rocket then
+            if statusText.Text:find("Ожидание") or statusText.Text:find("Готов") then
+                statusText.Text = "✅ Ракета готова!"
+                statusText.TextColor3 = Color3.fromRGB(50, 255, 50)
+            end
+        else
+            if not statusText.Text:find("Ожидание") and not statusText.Text:find("Готов") then
+                statusText.Text = "📡 Возьмите ракету"
+                statusText.TextColor3 = Color3.fromRGB(200, 200, 200)
+            end
+        end
     end
 end)
 
--- Уведомление о загрузке
-game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "АИМБОТ ЗАГРУЖЕН",
-    Text = "Правая кнопка мыши для наведения на убийцу",
-    Duration = 5
-})
+-- ===== ОБНАРУЖЕНИЕ НОВОЙ РАКЕТЫ =====
+local function onCharacterAdded()
+    character = player.Character or player.CharacterAdded:Wait()
+    humanoid = character:WaitForChild("Humanoid")
+end
 
-print("[АБИБОК] Аимбот для MM2 активирован")
+player.CharacterAdded:Connect(onCharacterAdded)
+
+-- ===== ЗАПУСК =====
+print("==========================================")
+print("🚀 МБР ДЛЯ ТЕЛЕФОНА ЗАГРУЖЕНА!")
+print("   Возьми ракету и нажми кнопку ЗАПУСТИТЬ")
+print("==========================================")
+
+-- Автозапуск при старте
+task.spawn(function()
+    while screenGui.Parent do
+        task.wait(2)
+        checkForRocket()
+    end
+end)
+
+-- Удаляем GUI при уничтожении персонажа
+player.CharacterAdded:Connect(function()
+    if screenGui then
+        screenGui:Destroy()
+    end
+end)
