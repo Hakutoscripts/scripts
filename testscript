@@ -21,7 +21,7 @@ local CONFIG = {
     ExplosionDamage = 200,       -- Урон от взрыва
     FlightDuration = 10,         -- Макс. время полета (сек)
     TrailEnabled = true,         -- Огненный след
-    AutoLaunch = false,          -- Автозапуск при взятии ракеты
+    AutoLaunch = true,          -- Автозапуск при взятии ракеты
 }
 
 -- ===== GUI ДЛЯ ТЕЛЕФОНА =====
