@@ -88,7 +88,97 @@ for _, item3 in ipairs(workspace.Items:GetChildren()) do
         end
     end
 end
-print("1")
+local targetName3 = "Tyre"
+for _, item4 in ipairs(workspace.Items:GetChildren()) do
+    if item4.Name == targetName3 then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item4:IsA("BasePart") then
+            item4.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item4:IsA("Model") then
+            item4:PivotTo(crowa + offset)
+        end
+    end
+end
+local targetName4 = "Rifle Ammo"
+for _, item5 in ipairs(workspace.Items:GetChildren()) do
+    if item5.Name == targetName4 then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item5:IsA("BasePart") then
+            item5.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item5:IsA("Model") then
+            item5:PivotTo(crowa + offset)
+        end
+    end
+end
+local targetName5 = "Old Radio"
+for _, item6 in ipairs(workspace.Items:GetChildren()) do
+    if item6.Name == targetName5 then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item6:IsA("BasePart") then
+            item6.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item6:IsA("Model") then
+            item6:PivotTo(crowa + offset)
+        end
+    end
+end
+local targetName6 = "Broken Microwave"
+for _, item7 in ipairs(workspace.Items:GetChildren()) do
+    if item7.Name == targetName6 then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item7:IsA("BasePart") then
+            item7.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item7:IsA("Model") then
+            item7:PivotTo(crowa + offset)
+        end
+    end
+end
+local targetName7 = "Broken Microwave"
+for _, item8 in ipairs(workspace.Items:GetChildren()) do
+    if item8.Name == targetName7 then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item8:IsA("BasePart") then
+            item8.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item8:IsA("Model") then
+            item8:PivotTo(crowa + offset)
+        end
+    end
+end
+local targetName8 = "Bandage"
+for _, item9 in ipairs(workspace.Items:GetChildren()) do
+    if item9.Name == targetName8 then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item9:IsA("BasePart") then
+            item9.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item9:IsA("Model") then
+            item9:PivotTo(crowa + offset)
+        end
+    end
+end
+local targetName9 = "Revolver Ammo"
+for _, item10 in ipairs(workspace.Items:GetChildren()) do
+    if item10.Name == targetName9 then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item10:IsA("BasePart") then
+            item10.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item10:IsA("Model") then
+            item10:PivotTo(crowa + offset)
+        end
+    end
+end
 end
 
 task.spawn(function()
