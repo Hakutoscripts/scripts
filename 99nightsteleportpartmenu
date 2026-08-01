@@ -1,0 +1,112 @@
+-- Код создает перетаскиваемое меню с переключателем и кнопкой удаления
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+if CoreGui:FindFirstChild("XenoToggleMenu") then CoreGui.XenoToggleMenu:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "XenoToggleMenu"
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size, MainFrame.Position = UDim2.new(0, 220, 0, 160), UDim2.new(0.5, -110, 0.5, -80)
+MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
+
+local TopBar = Instance.new("Frame", MainFrame)
+TopBar.Size, TopBar.BackgroundColor3 = UDim2.new(1, 0, 0, 30), Color3.fromRGB(25, 25, 25)
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 8)
+
+local ToggleButton = Instance.new("TextButton", MainFrame)
+ToggleButton.Size, ToggleButton.Position = UDim2.new(1, -20, 0, 40), UDim2.new(0, 10, 0, 45)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+ToggleButton.Text = "Status: OFF"
+
+local DeleteButton = Instance.new("TextButton", MainFrame)
+DeleteButton.Size, DeleteButton.Position = UDim2.new(1, -20, 0, 35), UDim2.new(0, 10, 0, 105)
+DeleteButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+DeleteButton.Text = "Закрыть / Удалить"
+
+-- Логика перетаскивания
+local dragging, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch then
+        dragging, dragStart, startPos = true, input.Position, MainFrame.Position
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+TopBar.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch then dragging = false end end)
+
+-- Переключатель логики
+local isEnabled = false
+
+local function targetCommand()
+    -- ЗАМЕНИТЕ ЭТУ СТРОКУ НА СВОЮ КОМАНДУ
+local targetName = "Lava Eel" -- Укажите нужное название
+local crowa = CFrame.new(805, -62, 860)
+local count = 1
+local offsetStep = 3 -- Расстояние между предметами, чтобы они не слипались
+for _, item1 in ipairs(workspace.Items:GetChildren()) do
+    if item1.Name == targetName then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item1:IsA("BasePart") then
+            item1.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item1:IsA("Model") then
+            item1:PivotTo(crowa + offset)
+        end
+    end
+end
+local targetName1 = "Lionfish"
+for _, item2 in ipairs(workspace.Items:GetChildren()) do
+    if item2.Name == targetName1 then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item2:IsA("BasePart") then
+            item2.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item2:IsA("Model") then
+            item2:PivotTo(crowa + offset)
+        end
+    end
+end
+local targetName2 = "Cooked Lava Eel"
+for _, item3 in ipairs(workspace.Items:GetChildren()) do
+    if item3.Name == targetName2 then
+    local offset = Vector3.new(count * offsetStep, 0, 0)
+        -- Если это обычная деталь (Part)
+        if item3:IsA("BasePart") then
+            item3.CFrame = crowa + offset
+        -- Если это модель (Model, состоящая из нескольких частей)
+        elseif item3:IsA("Model") then
+            item3:PivotTo(crowa + offset)
+        end
+    end
+end
+print("1")
+end
+
+task.spawn(function()
+    while true do
+        if isEnabled then
+            pcall(targetCommand)
+            -- 300 секунд = 5 минут. Для теста можете временно заменить на 5 или 10 секунд
+            task.wait(10) 
+        else
+            task.wait(0.5)
+        end
+    end
+end)
+
+ToggleButton.MouseButton1Click:Connect(function()
+    isEnabled = not isEnabled
+    ToggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
+    ToggleButton.Text = isEnabled and "Status: ON" or "Status: OFF"
+end)
+
+DeleteButton.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
