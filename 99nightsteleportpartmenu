@@ -2,6 +2,9 @@
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Player = Players.LocalPlayer
 
 if CoreGui:FindFirstChild("XenoToggleMenu") then CoreGui.XenoToggleMenu:Destroy() end
 
@@ -45,142 +48,248 @@ TopBar.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInp
 local isEnabled = false
 
 local function targetCommand()
-    -- ЗАМЕНИТЕ ЭТУ СТРОКУ НА СВОЮ КОМАНДУ
-local targetName = "Lava Eel" -- Укажите нужное название
-local crowa = CFrame.new(805, -62, 860)
-local count = 1
-local offsetStep = 3 -- Расстояние между предметами, чтобы они не слипались
-for _, item1 in ipairs(workspace.Items:GetChildren()) do
-    if item1.Name == targetName then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item1:IsA("BasePart") then
-            item1.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item1:IsA("Model") then
-            item1:PivotTo(crowa + offset)
-        end
+    
+    local character = Player.Character
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
+        print("❌ Character not found!")
+        return
     end
-end
-local targetName1 = "Lionfish"
-for _, item2 in ipairs(workspace.Items:GetChildren()) do
-    if item2.Name == targetName1 then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item2:IsA("BasePart") then
-            item2.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item2:IsA("Model") then
-            item2:PivotTo(crowa + offset)
-        end
-    end
-end
-local targetName2 = "Cooked Lava Eel"
-for _, item3 in ipairs(workspace.Items:GetChildren()) do
-    if item3.Name == targetName2 then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item3:IsA("BasePart") then
-            item3.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item3:IsA("Model") then
-            item3:PivotTo(crowa + offset)
-        end
-    end
-end
-local targetName3 = "Tyre"
-for _, item4 in ipairs(workspace.Items:GetChildren()) do
-    if item4.Name == targetName3 then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item4:IsA("BasePart") then
-            item4.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item4:IsA("Model") then
-            item4:PivotTo(crowa + offset)
-        end
-    end
-end
-local targetName4 = "Rifle Ammo"
-for _, item5 in ipairs(workspace.Items:GetChildren()) do
-    if item5.Name == targetName4 then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item5:IsA("BasePart") then
-            item5.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item5:IsA("Model") then
-            item5:PivotTo(crowa + offset)
-        end
-    end
-end
-local targetName5 = "Old Radio"
-for _, item6 in ipairs(workspace.Items:GetChildren()) do
-    if item6.Name == targetName5 then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item6:IsA("BasePart") then
-            item6.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item6:IsA("Model") then
-            item6:PivotTo(crowa + offset)
-        end
-    end
-end
-local targetName6 = "Broken Microwave"
-for _, item7 in ipairs(workspace.Items:GetChildren()) do
-    if item7.Name == targetName6 then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item7:IsA("BasePart") then
-            item7.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item7:IsA("Model") then
-            item7:PivotTo(crowa + offset)
-        end
-    end
-end
-local targetName7 = "Broken Microwave"
-for _, item8 in ipairs(workspace.Items:GetChildren()) do
-    if item8.Name == targetName7 then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item8:IsA("BasePart") then
-            item8.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item8:IsA("Model") then
-            item8:PivotTo(crowa + offset)
-        end
-    end
-end
-local targetName8 = "Bandage"
-for _, item9 in ipairs(workspace.Items:GetChildren()) do
-    if item9.Name == targetName8 then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item9:IsA("BasePart") then
-            item9.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item9:IsA("Model") then
-            item9:PivotTo(crowa + offset)
-        end
-    end
-end
-local targetName9 = "Revolver Ammo"
-for _, item10 in ipairs(workspace.Items:GetChildren()) do
-    if item10.Name == targetName9 then
-    local offset = Vector3.new(count * offsetStep, 0, 0)
-        -- Если это обычная деталь (Part)
-        if item10:IsA("BasePart") then
-            item10.CFrame = crowa + offset
-        -- Если это модель (Model, состоящая из нескольких частей)
-        elseif item10:IsA("Model") then
-            item10:PivotTo(crowa + offset)
-        end
-    end
-end
-end
 
+    local targetPosition = CFrame.new(805, -62, 860)
+    local itemsFound = 0
+    local itemsMoved = 0
+    local itemsCounted = {}
+    local targetName = "Lava Eel"
+    
+for _, item in ipairs(workspace.Items:GetChildren()) do
+    if item.Name == targetName then
+                -- Handle different item types
+                if item:IsA("BasePart") then
+                    if item.Anchored then
+                        item.Anchored = false
+                    end
+                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                elseif item:IsA("Model") then
+                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                    if primaryPart then
+                        if primaryPart.Anchored then
+                            primaryPart.Anchored = false
+                        end
+                        if item.PrimaryPart then
+                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
+                        else
+                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                        end
+                    end
+                end
+                
+            end
+        end
+ local targetName = "Lionfish"
+    
+for _, item in ipairs(workspace.Items:GetChildren()) do
+    if item.Name == targetName then
+                -- Handle different item types
+                if item:IsA("BasePart") then
+                    if item.Anchored then
+                        item.Anchored = false
+                    end
+                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                elseif item:IsA("Model") then
+                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                    if primaryPart then
+                        if primaryPart.Anchored then
+                            primaryPart.Anchored = false
+                        end
+                        if item.PrimaryPart then
+                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
+                        else
+                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                        end
+                    end
+                end
+                
+            end
+        end
+ local targetName = "Tyre"
+    
+for _, item in ipairs(workspace.Items:GetChildren()) do
+    if item.Name == targetName then
+                -- Handle different item types
+                if item:IsA("BasePart") then
+                    if item.Anchored then
+                        item.Anchored = false
+                    end
+                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                elseif item:IsA("Model") then
+                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                    if primaryPart then
+                        if primaryPart.Anchored then
+                            primaryPart.Anchored = false
+                        end
+                        if item.PrimaryPart then
+                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
+                        else
+                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                        end
+                    end
+                end
+                
+            end
+        end
+ local targetName = "Cooked Lava Eel"
+    
+for _, item in ipairs(workspace.Items:GetChildren()) do
+    if item.Name == targetName then
+                -- Handle different item types
+                if item:IsA("BasePart") then
+                    if item.Anchored then
+                        item.Anchored = false
+                    end
+                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                elseif item:IsA("Model") then
+                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                    if primaryPart then
+                        if primaryPart.Anchored then
+                            primaryPart.Anchored = false
+                        end
+                        if item.PrimaryPart then
+                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
+                        else
+                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                        end
+                    end
+                end
+                
+            end
+        end
+ local targetName = "Rifle Ammo"
+    
+for _, item in ipairs(workspace.Items:GetChildren()) do
+    if item.Name == targetName then
+                -- Handle different item types
+                if item:IsA("BasePart") then
+                    if item.Anchored then
+                        item.Anchored = false
+                    end
+                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                elseif item:IsA("Model") then
+                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                    if primaryPart then
+                        if primaryPart.Anchored then
+                            primaryPart.Anchored = false
+                        end
+                        if item.PrimaryPart then
+                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
+                        else
+                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                        end
+                    end
+                end
+                
+            end
+        end
+local targetName = "Old Radio"
+for _, item in ipairs(workspace.Items:GetChildren()) do
+    if item.Name == targetName then
+                -- Handle different item types
+                if item:IsA("BasePart") then
+                    if item.Anchored then
+                        item.Anchored = false
+                    end
+                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                elseif item:IsA("Model") then
+                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                    if primaryPart then
+                        if primaryPart.Anchored then
+                            primaryPart.Anchored = false
+                        end
+                        if item.PrimaryPart then
+                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
+                        else
+                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                        end
+                    end
+                end
+                
+            end
+        end
+local targetName = "Broken Microwave"
+for _, item in ipairs(workspace.Items:GetChildren()) do
+    if item.Name == targetName then
+                -- Handle different item types
+                if item:IsA("BasePart") then
+                    if item.Anchored then
+                        item.Anchored = false
+                    end
+                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                elseif item:IsA("Model") then
+                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                    if primaryPart then
+                        if primaryPart.Anchored then
+                            primaryPart.Anchored = false
+                        end
+                        if item.PrimaryPart then
+                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
+                        else
+                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                        end
+                    end
+                end
+                
+            end
+        end
+local targetName = "Bandage"
+for _, item in ipairs(workspace.Items:GetChildren()) do
+    if item.Name == targetName then
+                -- Handle different item types
+                if item:IsA("BasePart") then
+                    if item.Anchored then
+                        item.Anchored = false
+                    end
+                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                elseif item:IsA("Model") then
+                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                    if primaryPart then
+                        if primaryPart.Anchored then
+                            primaryPart.Anchored = false
+                        end
+                        if item.PrimaryPart then
+                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
+                        else
+                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                        end
+                    end
+                end
+                
+            end
+        end
+local targetName = "Revolver Ammo"
+for _, item in ipairs(workspace.Items:GetChildren()) do
+    if item.Name == targetName then
+                -- Handle different item types
+                if item:IsA("BasePart") then
+                    if item.Anchored then
+                        item.Anchored = false
+                    end
+                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                elseif item:IsA("Model") then
+                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
+                    if primaryPart then
+                        if primaryPart.Anchored then
+                            primaryPart.Anchored = false
+                        end
+                        if item.PrimaryPart then
+                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
+                        else
+                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
+                        end
+                    end
+                end
+                
+            end
+        end
+end
 task.spawn(function()
     while true do
         if isEnabled then
