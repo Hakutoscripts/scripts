@@ -45,13 +45,14 @@ local function makeButton(
         ColorSequenceKeypoint.new(1, lighter),
     })
     grad.Rotation = 90
+    Instance.new('UICorner', btn).CornerRadius = UDim.new(0, 6)
     return btn
 end
 
 -- ---------- Main Menu Frame ----------
 local mainFrame = Instance.new('Frame', screenGui)
-mainFrame.Size = UDim2.new(0, 350, 0, 370)
-mainFrame.Position = UDim2.new(0.5, -175, 0.3, 0)
+mainFrame.Size = UDim2.new(0, 400, 0, 420) -- Увеличил высоту
+mainFrame.Position = UDim2.new(0.5, -200, 0.3, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
@@ -72,7 +73,7 @@ title.BackgroundTransparency = 1
 local closeBtn = makeButton(
     mainFrame,
     'X',
-    UDim2.new(1, -30, 0, 5),
+    UDim2.new(1, -35, 0, 5),
     Color3.fromRGB(150, 0, 0),
     Color3.fromRGB(255, 255, 255),
     25,
@@ -160,14 +161,16 @@ local windows = {
     },
 }
 
-local yPos = 0.15
-local runningStates = {}
+local yPos = 0.12 -- Начальная позиция
+local rowHeight = 0.2 -- Высота строки
 
 for i, win in ipairs(windows) do
-    -- Label
+    local rowY = yPos + (i - 1) * rowHeight
+    
+    -- Label (имя)
     local label = Instance.new('TextLabel', mainFrame)
     label.Size = UDim2.new(0, 100, 0, 30)
-    label.Position = UDim2.new(0.05, 0, yPos, 0)
+    label.Position = UDim2.new(0.05, 0, rowY, 0)
     label.Text = win.name
     label.Font = Enum.Font.Cartoon
     label.TextSize = 20
@@ -175,10 +178,10 @@ for i, win in ipairs(windows) do
     label.BackgroundTransparency = 1
     label.TextXAlignment = Enum.TextXAlignment.Left
 
-    -- Status
+    -- Status (статус)
     local status = Instance.new('TextLabel', mainFrame)
     status.Size = UDim2.new(0, 80, 0, 30)
-    status.Position = UDim2.new(0.35, 0, yPos, 0)
+    status.Position = UDim2.new(0.35, 0, rowY, 0)
     status.Text = 'Stopped'
     status.Font = Enum.Font.Cartoon
     status.TextSize = 18
@@ -189,24 +192,24 @@ for i, win in ipairs(windows) do
     local startBtn = makeButton(
         mainFrame,
         'Start',
-        UDim2.new(0.58, 0, yPos, 0),
+        UDim2.new(0.60, 0, rowY, 0),
         Color3.fromRGB(0, 150, 0),
         Color3.fromRGB(255, 255, 255),
-        60,
+        50,
         30,
-        18
+        16
     )
 
     -- Stop Button
     local stopBtn = makeButton(
         mainFrame,
         'Stop',
-        UDim2.new(0.79, 0, yPos, 0),
+        UDim2.new(0.80, 0, rowY, 0),
         Color3.fromRGB(180, 0, 0),
         Color3.fromRGB(255, 255, 255),
-        60,
+        50,
         30,
-        18
+        16
     )
 
     runningStates[i] = false
@@ -336,14 +339,12 @@ for i, win in ipairs(windows) do
         status.Text = 'Stopped'
         status.TextColor3 = Color3.fromRGB(255, 100, 100)
     end)
-
-    yPos = yPos + 0.22
 end
 
 -- ---------- LR Pity Display in Main Menu ----------
 local pityLabel = Instance.new('TextLabel', mainFrame)
 pityLabel.Size = UDim2.new(1, 0, 0, 35)
-pityLabel.Position = UDim2.new(0, 0, 0.88, 0)
+pityLabel.Position = UDim2.new(0, 0, 0.92, 0) -- Сдвинул ниже
 pityLabel.Text = 'LR Pity: 0/2000'
 pityLabel.Font = Enum.Font.Cartoon
 pityLabel.TextSize = 22
@@ -352,12 +353,21 @@ pityLabel.BackgroundTransparency = 1
 
 -- Update pity display
 task.spawn(function()
-    local miscStats = player:WaitForChild('MiscStats')
-    local lrPity = miscStats:WaitForChild('LRPity')
-    
-    pityLabel.Text = 'LR Pity: ' .. tostring(lrPity.Value) .. '/2000'
-    
-    lrPity:GetPropertyChangedSignal('Value'):Connect(function()
-        pityLabel.Text = 'LR Pity: ' .. tostring(lrPity.Value) .. '/2000'
+    local success, miscStats = pcall(function()
+        return player:WaitForChild('MiscStats')
     end)
+    
+    if success and miscStats then
+        local success2, lrPity = pcall(function()
+            return miscStats:WaitForChild('LRPity')
+        end)
+        
+        if success2 and lrPity then
+            pityLabel.Text = 'LR Pity: ' .. tostring(lrPity.Value) .. '/2000'
+            
+            lrPity:GetPropertyChangedSignal('Value'):Connect(function()
+                pityLabel.Text = 'LR Pity: ' .. tostring(lrPity.Value) .. '/2000'
+            end)
+        end
+    end
 end)
