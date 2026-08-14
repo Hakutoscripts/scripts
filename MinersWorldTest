@@ -1,0 +1,305 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-------------------------------------------------
+-- CONFIG
+-------------------------------------------------
+local SCAN_EXISTING_ON_START = true
+local SHOW_LABELS = true
+local UNLOAD_KEY = Enum.KeyCode.M
+
+local VISIBLE_RARITIES = {
+    Zenith = true,
+    Divine = true,
+    Celestial = true,
+    Ethereal = true,
+    Mythic = true,
+    Legendary = true,
+    Epic = true,
+    Rare = true,
+    Uncommon = false,
+}
+
+-- Optional mesh fallback. The original Script.txt checks MeshId but never maps it to a rarity.
+-- If you know a mesh belongs to a rarity, put it here.
+local MESH_RARITY_MAP = {
+    -- ["rbxassetid://123456789"] = "Legendary",
+}
+
+-------------------------------------------------
+-- RARITY DATA
+-------------------------------------------------
+local rarities = {
+    {name = "Zenith", color = Color3.fromRGB(120, 0, 120)},
+    {name = "Divine", color = Color3.fromRGB(255, 255, 255)},
+    {name = "Celestial", color = Color3.fromRGB(0, 255, 255)},
+    {name = "Ethereal", color = Color3.fromRGB(255, 20, 147)},
+    {name = "Mythic", color = Color3.fromRGB(255, 0, 0)},
+    {name = "Legendary", color = Color3.fromRGB(255, 200, 0)},
+    {name = "Epic", color = Color3.fromRGB(170, 0, 255)},
+    {name = "Rare", color = Color3.fromRGB(0, 120, 255)},
+    {name = "Uncommon", color = Color3.fromRGB(0, 255, 0)},
+}
+
+local rarityByName = {}
+for _, rarity in ipairs(rarities) do
+    rarityByName[rarity.name] = rarity
+end
+
+-------------------------------------------------
+-- STATE
+-------------------------------------------------
+local isUnloaded = false
+local descendantAddedConn = nil
+local inputConn = nil
+local trackedParts = {}
+local espObjectsByPart = {}
+
+-------------------------------------------------
+-- HELPERS
+-------------------------------------------------
+local function safeDestroy(inst)
+    if inst and inst.Destroy then
+        pcall(function()
+            inst:Destroy()
+        end)
+    end
+end
+
+local function colorDistance(c1, c2)
+    return (c1.R - c2.R) ^ 2 + (c1.G - c2.G) ^ 2 + (c1.B - c2.B) ^ 2
+end
+
+local function avgColorFromEmitter(emitter)
+    local sequence = emitter.Color
+    local r, g, b, count = 0, 0, 0, 0
+
+    for _, keypoint in ipairs(sequence.Keypoints) do
+        r = r + keypoint.Value.R
+        g = g + keypoint.Value.G
+        b = b + keypoint.Value.B
+        count = count + 1
+    end
+
+    if count == 0 then
+        return nil
+    end
+
+    return Color3.new(r / count, g / count, b / count)
+end
+
+local function closestRarity(avgColor)
+    if not avgColor then
+        return nil
+    end
+
+    local bestRarity = nil
+    local bestDistance = math.huge
+
+    for _, rarity in ipairs(rarities) do
+        local distance = colorDistance(avgColor, rarity.color)
+        if distance < bestDistance then
+            bestDistance = distance
+            bestRarity = rarity
+        end
+    end
+
+    if bestDistance < 3 then
+        return bestRarity
+    end
+
+    return nil
+end
+
+local function findPart(obj)
+    while obj do
+        if obj:IsA("BasePart") then
+            return obj
+        end
+        obj = obj.Parent
+    end
+    return nil
+end
+
+local function identifyRarity(part)
+    local emitter = part:FindFirstChildOfClass("ParticleEmitter")
+    if emitter and emitter.Color then
+        local avgColor = avgColorFromEmitter(emitter)
+        local rarity = closestRarity(avgColor)
+        if rarity then
+            return rarity
+        end
+    end
+
+    if part:IsA("MeshPart") and part.MeshId ~= "" then
+        local rarityName = MESH_RARITY_MAP[part.MeshId]
+        if rarityName then
+            return rarityByName[rarityName]
+        end
+    end
+
+    return nil
+end
+
+local function removeEsp(part)
+    local esp = espObjectsByPart[part]
+    if not esp then
+        return
+    end
+
+    safeDestroy(esp.highlight)
+    safeDestroy(esp.billboard)
+    espObjectsByPart[part] = nil
+end
+
+local function cleanupOrphanedEsp()
+    for _, inst in ipairs(workspace:GetDescendants()) do
+        if inst:IsA("Highlight") and inst.Name == "NoGuiRarityHighlight" then
+            safeDestroy(inst)
+        elseif inst:IsA("BillboardGui") and inst.Name == "NoGuiRarityLabel" then
+            safeDestroy(inst)
+        end
+    end
+end
+
+local function createEsp(part, rarity)
+    removeEsp(part)
+
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "NoGuiRarityHighlight"
+    highlight.FillColor = rarity.color
+    highlight.OutlineColor = rarity.color
+    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    highlight.Parent = part
+
+    local billboard = nil
+    if SHOW_LABELS then
+        billboard = Instance.new("BillboardGui")
+        billboard.Name = "NoGuiRarityLabel"
+        billboard.Size = UDim2.new(0, 120, 0, 36)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.AlwaysOnTop = true
+        billboard.Parent = part
+
+        local label = Instance.new("TextLabel")
+        label.BackgroundTransparency = 1
+        label.Size = UDim2.fromScale(1, 1)
+        label.Font = Enum.Font.GothamBlack
+        label.TextScaled = true
+        label.TextStrokeTransparency = 0
+        label.TextColor3 = rarity.color
+        label.Text = rarity.name:upper()
+        label.Parent = billboard
+    end
+
+    espObjectsByPart[part] = {
+        highlight = highlight,
+        billboard = billboard,
+    }
+end
+
+local function processPart(part)
+    if isUnloaded or trackedParts[part] then
+        return
+    end
+
+    trackedParts[part] = true
+
+    if not part:IsA("BasePart") then
+        return
+    end
+
+    local rarity = identifyRarity(part)
+    if not rarity then
+        return
+    end
+
+    if VISIBLE_RARITIES[rarity.name] then
+        createEsp(part, rarity)
+    end
+end
+
+local function unloadScript()
+    if isUnloaded then
+        return
+    end
+
+    isUnloaded = true
+
+    if descendantAddedConn then
+        descendantAddedConn:Disconnect()
+        descendantAddedConn = nil
+    end
+
+    if inputConn then
+        inputConn:Disconnect()
+        inputConn = nil
+    end
+
+    for part in pairs(espObjectsByPart) do
+        removeEsp(part)
+    end
+
+    trackedParts = {}
+
+    if getgenv().NoGuiRarityScannerUnload == unloadScript then
+        getgenv().NoGuiRarityScannerUnload = nil
+    end
+
+    print("[NoGUI Rarity Scanner] Unloaded.")
+end
+
+-------------------------------------------------
+-- BOOT
+-------------------------------------------------
+if getgenv().NoGuiRarityScannerUnload then
+    getgenv().NoGuiRarityScannerUnload()
+end
+cleanupOrphanedEsp()
+getgenv().NoGuiRarityScannerUnload = unloadScript
+
+descendantAddedConn = workspace.DescendantAdded:Connect(function(inst)
+    if isUnloaded then
+        return
+    end
+
+    if inst:IsA("ParticleEmitter") then
+        local part = findPart(inst)
+        if part then
+            processPart(part)
+        end
+    elseif inst:IsA("MeshPart") then
+        processPart(inst)
+    end
+end)
+
+if SCAN_EXISTING_ON_START then
+    for _, inst in ipairs(workspace:GetDescendants()) do
+        if isUnloaded then
+            break
+        end
+
+        if inst:IsA("ParticleEmitter") then
+            local part = findPart(inst)
+            if part then
+                processPart(part)
+            end
+        elseif inst:IsA("MeshPart") then
+            processPart(inst)
+        end
+    end
+end
+
+inputConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or isUnloaded then
+        return
+    end
+
+    if input.KeyCode == UNLOAD_KEY then
+        unloadScript()
+    end
+end)
+
+print("[NoGUI Rarity Scanner] Loaded. Press " .. tostring(UNLOAD_KEY):gsub("Enum.KeyCode.", "") .. " to unload.")
