@@ -1,0 +1,198 @@
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+if not game:IsLoaded() then game.Loaded:Wait() end
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+repeat task.wait(0.1) until LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+
+local EMERALD_ID = "rbxassetid://12796568017"
+local MAX_SCAN_RANGE = 3500 
+
+local SETTINGS = {
+    GLIDE_SPEED = 300,
+    MINE_DISTANCE = 14,
+    STOP_DISTANCE = 5,
+    STUCK_TIMEOUT = 10
+}
+
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local Camera = workspace.CurrentCamera
+
+local trackedEmeralds = {}
+local ignoredEmeralds = {}
+local totalInFrame = 0 
+local closestEmerald = nil
+local isTeleporting = false
+local isMining = false
+local lastMineTime = tick()
+local hopTimer = 5
+local hoppingActive = false
+
+local function serverHop()
+    if hoppingActive then return end
+    hoppingActive = true
+    
+    local function tryTeleport()
+        local success, result = pcall(function()
+            return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")
+        end)
+        
+        if success then
+            local decoded = HttpService:JSONDecode(result)
+            if decoded and decoded.data then
+                local servers = {}
+                for _, s in pairs(decoded.data) do
+                    if s.id ~= game.JobId and s.playing < s.maxPlayers then
+                        table.insert(servers, s.id)
+                    end
+                end
+                
+                if #servers > 0 then
+                    TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LP)
+                end
+            end
+        end
+        
+        task.wait(3)
+        if hoppingActive then tryTeleport() end
+    end
+    
+    task.spawn(tryTeleport)
+end
+
+local function glideToTarget()
+    if isTeleporting or not closestEmerald then return end
+    local char = LP.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    isTeleporting = true
+    for _, p in pairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end
+    
+    local bv = Instance.new("BodyVelocity", root)
+    bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    bv.Velocity = Vector3.new(0,0,0)
+    
+    local direction = (root.Position - closestEmerald.Position).Unit
+    local targetPos = closestEmerald.Position + (direction * SETTINGS.STOP_DISTANCE)
+    
+    local dist = (targetPos - root.Position).Magnitude
+    local duration = dist / SETTINGS.GLIDE_SPEED
+    
+    local t = TweenService:Create(root, TweenInfo.new(duration, Enum.EasingStyle.Linear), {CFrame = CFrame.new(targetPos, closestEmerald.Position)})
+    t:Play()
+    
+    t.Completed:Connect(function()
+        bv:Destroy()
+        if char then
+            for _, p in pairs(char:GetChildren()) do if p:IsA("BasePart") then p.CanCollide = true end end
+        end
+        isTeleporting = false
+    end)
+end
+
+local function forceApplyESP(part)
+    if not part:IsA("BasePart") or trackedEmeralds[part] then return end
+    local mId = ""
+    if part:IsA("MeshPart") then mId = part.MeshId
+    else
+        local m = part:FindFirstChildOfClass("SpecialMesh")
+        if m then mId = m.MeshId end
+    end
+    
+    if mId == EMERALD_ID or part.Name:lower():find("emerald") then
+        trackedEmeralds[part] = part
+        part.AncestryChanged:Connect(function()
+            if not part:IsDescendantOf(workspace) then
+                trackedEmeralds[part] = nil
+                lastMineTime = tick()
+                isMining = false
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            end
+        end)
+    end
+end
+
+task.spawn(function()
+    for _, v in ipairs(workspace:GetDescendants()) do forceApplyESP(v) end
+    workspace.DescendantAdded:Connect(forceApplyESP)
+    
+    while true do
+        task.wait(1)
+        if totalInFrame == 0 then
+            hopTimer = hopTimer - 1
+            if hopTimer <= 0 then 
+                serverHop() 
+                hopTimer = 3
+            end
+        else
+            hopTimer = 5
+            hoppingActive = false
+            if isMining and tick() - lastMineTime > SETTINGS.STUCK_TIMEOUT then
+                ignoredEmeralds[closestEmerald] = true
+                isMining = false
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            end
+        end
+    end
+end)
+
+local sg = Instance.new("ScreenGui", LP.PlayerGui)
+local f = Instance.new("Frame", sg); f.Size = UDim2.new(0, 260, 0, 85); f.Position = UDim2.new(0.5, -130, 0.85, 0); f.BackgroundColor3 = Color3.new(0,0,0); f.BackgroundTransparency = 0.4; Instance.new("UICorner", f)
+local t1 = Instance.new("TextLabel", f); t1.Size = UDim2.new(1, 0, 0.4, 0); t1.BackgroundTransparency = 1; t1.Font = Enum.Font.GothamBold; t1.TextColor3 = Color3.new(1,1,1); t1.TextSize = 14
+local t2 = Instance.new("TextLabel", f); t2.Size = UDim2.new(1, 0, 0.3, 0); t2.Position = UDim2.new(0,0,0.4,0); t2.BackgroundTransparency = 1; t2.Font = Enum.Font.Code; t2.TextSize = 12; t2.TextColor3 = Color3.new(1,1,1)
+local t3 = Instance.new("TextLabel", f); t3.Size = UDim2.new(1, 0, 0.3, 0); t3.Position = UDim2.new(0,0,0.7,0); t3.BackgroundTransparency = 1; t3.Font = Enum.Font.Gotham; t3.TextSize = 10; t3.TextColor3 = Color3.new(0.7,0.7,0.7)
+
+RunService.RenderStepped:Connect(function()
+    local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+    
+    local distTable = {}
+    totalInFrame = 0
+    for p, _ in pairs(trackedEmeralds) do 
+        if p and p.Parent and not ignoredEmeralds[p] then 
+            local d = (p.Position - root.Position).Magnitude
+            if d <= MAX_SCAN_RANGE then
+                totalInFrame = totalInFrame + 1
+                table.insert(distTable, {p = p, d = d})
+            end
+        end 
+    end
+    
+    table.sort(distTable, function(a, b) return a.d < b.d end)
+    closestEmerald = distTable[1] and distTable[1].p or nil
+    
+    if totalInFrame > 0 and closestEmerald then
+        t1.Text = "💎 TARGETS: " .. totalInFrame
+        local d = (closestEmerald.Position - root.Position).Magnitude
+        
+        if d < SETTINGS.MINE_DISTANCE then
+            local screenPos, onScreen = Camera:WorldToViewportPoint(closestEmerald.Position)
+            root.CFrame = CFrame.new(root.Position, Vector3.new(closestEmerald.Position.X, root.Position.Y, closestEmerald.Position.Z))
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, closestEmerald.Position)
+            
+            if not isMining then
+                isMining = true
+                lastMineTime = tick()
+                VirtualInputManager:SendMouseMoveEvent(screenPos.X, screenPos.Y, game)
+                VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 1)
+            end
+            t2.Text = "STATUS: MINING..."
+        else
+            if isMining then
+                isMining = false
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            end
+            t2.Text = "STATUS: GLIDING..."
+            if not isTeleporting then glideToTarget() end
+        end
+    else
+        t1.Text = "🛰️ AREA CLEARED"
+        t2.Text = hoppingActive and "STATUS: HOPPING..." or "RETRY IN: " .. hopTimer .. "s"
+    end
+end)
