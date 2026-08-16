@@ -1,0 +1,149 @@
+-- PRISON LIFE | AIMBOT & TEAM ESP (RAYFIELD)
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- Переменные состояний
+local AimbotEnabled = false
+local ESPEnabled = false
+local TeamCheck = true
+local Smoothness = 0.5 -- Плавность наводки (от 0.1 до 1)
+
+-- Функция поиска ближайшего игрока к центру экрана
+local function GetClosestPlayer()
+    local closestPlayer = nil
+    local shortestDistance = math.huge
+    local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
+            -- Проверка на одну команду (если включена)
+            if TeamCheck and player.Team == LocalPlayer.Team then
+                continue
+            end
+
+            -- Проверка, жив ли игрок
+            if player.Character.Humanoid.Health <= 0 then
+                continue
+            end
+
+            local hrp = player.Character.HumanoidRootPart
+            local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+
+            if onScreen then
+                local distance = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+    end
+
+    return closestPlayer
+end
+
+-- Создание окна Rayfield
+local Window = Rayfield:CreateWindow({
+   Name = "Prison Life | Ultimate Combat",
+   LoadingTitle = "Loading Automation...",
+   LoadingSubtitle = "by Halloween Team",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
+
+local CombatTab = Window:CreateTab("Combat", 4483362458)
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+
+-- COMBAT TAB
+CombatTab:CreateToggle({
+   Name = "Enable Aimbot",
+   CurrentValue = false,
+   Callback = function(Value)
+       AimbotEnabled = Value
+   end,
+})
+
+CombatTab:CreateToggle({
+   Name = "Team Check (Ignore Teammates)",
+   CurrentValue = true,
+   Callback = function(Value)
+       TeamCheck = Value
+   end,
+})
+
+CombatTab:CreateSlider({
+   Name = "Aimbot Smoothness",
+   Range = {0.1, 1},
+   Increment = 0.05,
+   CurrentValue = 0.5,
+   Callback = function(Value)
+       Smoothness = Value
+   end,
+})
+
+-- VISUALS TAB
+VisualsTab:CreateToggle({
+   Name = "Enable Team ESP",
+   CurrentValue = false,
+   Callback = function(Value)
+       ESPEnabled = Value
+       if not Value then
+           for _, p in pairs(Players:GetPlayers()) do
+               if p.Character and p.Character:FindFirstChild("HighlightESP") then
+                   p.Character.HighlightESP:Destroy()
+               end
+           end
+       end
+   end,
+})
+
+-- ==================== ОСНОВНЫЕ ЦИКЛЫ ====================
+
+-- Цикл Аимбота (работает постоянно при включении, игнорируя ShiftLock)
+RunService.RenderStepped:Connect(function()
+    if AimbotEnabled then
+        local target = GetClosestPlayer()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            local headPos = target.Character.Head.Position
+            local currentCFrame = Camera.CFrame
+            local targetCFrame = CFrame.lookAt(currentCFrame.Position, headPos)
+            
+            -- Плавное смещение камеры к голове цели
+            Camera.CFrame = currentCFrame:Lerp(targetCFrame, Smoothness)
+        end
+    end
+end)
+
+-- Цикл ESP
+RunService.Stepped:Connect(function()
+    if ESPEnabled then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local hl = p.Character:FindFirstChild("HighlightESP")
+                if not hl then
+                    hl = Instance.new("Highlight")
+                    hl.Name = "HighlightESP"
+                    hl.Parent = p.Character
+                    hl.FillTransparency = 0.5
+                    hl.OutlineTransparency = 0
+                end
+
+                -- Определение цвета по команде
+                local teamName = p.Team and p.Team.Name or ""
+                if teamName == "Guards" then
+                    hl.FillColor = Color3.fromRGB(0, 120, 255) -- Синий для копов
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                elseif teamName == "Inmates" or teamName == "Criminals" then
+                    hl.FillColor = Color3.fromRGB(255, 120, 0) -- Оранжевый для зэков/преступников
+                    hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                else
+                    hl.FillColor = Color3.fromRGB(200, 200, 200) -- Серый для остальных
+                end
+            end
+        end
+    end
+end)
