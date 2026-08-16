@@ -1,0 +1,75 @@
+-- HALLOWEEN TEAM | RAYFIELD BOOMBOX V2
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local MarketplaceService = game:GetService("MarketplaceService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local Sound = Instance.new("Sound", workspace)
+Sound.Name = "Boombox_Audio"
+local BoomboxPart = nil
+
+local Window = Rayfield:CreateWindow({
+   Name = "Halloween Boombox | Rayfield Edition",
+   LoadingTitle = "Initialization...",
+   LoadingSubtitle = "by Halloween Team",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
+
+local MainTab = Window:CreateTab("Main Control", 4483362458)
+local VisualsTab = Window:CreateTab("Visuals", 4483362458)
+
+-- ID Input
+local Input = MainTab:CreateInput({
+   Name = "Sound ID",
+   PlaceholderText = "Введите ID...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text) end
+})
+
+-- Play Button
+MainTab:CreateButton({
+   Name = "Play Audio",
+   Callback = function()
+       local id = tonumber(Input.CurrentValue)
+       if not id then return end
+       
+       local success, info = pcall(function() return MarketplaceService:GetProductInfo(id) end)
+       if success and info and info.AssetTypeId == 3 then
+           Sound.SoundId = "rbxassetid://" .. id
+           Sound:Play()
+           Rayfield:Notify({Title = "Playing", Content = "Loaded: " .. info.Name, Duration = 3})
+       else
+           Rayfield:Notify({Title = "Error", Content = "ID не найден или это не аудио", Duration = 3})
+       end
+   end,
+})
+
+-- Stop Button
+MainTab:CreateButton({
+   Name = "Stop Audio",
+   Callback = function() Sound:Stop() end,
+})
+
+-- Visual Toggle
+VisualsTab:CreateToggle({
+   Name = "Attach Boombox Visual",
+   CurrentValue = false,
+   Callback = function(Value)
+       if Value then
+           if LocalPlayer.Character and not BoomboxPart then
+               BoomboxPart = Instance.new("Part", LocalPlayer.Character)
+               BoomboxPart.Size = Vector3.new(2, 1.2, 0.8)
+               BoomboxPart.Color = Color3.fromRGB(30, 30, 30)
+               local Weld = Instance.new("WeldConstraint", BoomboxPart)
+               Weld.Part0 = BoomboxPart
+               Weld.Part1 = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+               BoomboxPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1.5)
+           end
+       else
+           if BoomboxPart then BoomboxPart:Destroy(); BoomboxPart = nil end
+       end
+   end,
+})
+
+Rayfield:LoadConfiguration()
