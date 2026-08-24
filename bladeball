@@ -1,0 +1,239 @@
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+local Stats = game:GetService("Stats")
+
+local Config = {
+    EmergencyRadius = 10,
+    DistanceToParry = 0.65,
+    ClashDistance = 22,
+    ClashSpeed = 0.01,
+    NormalSpeed = 0.05,
+    PingBased = true,
+    PingBasedOffset = 1.8,
+    BaseWindow = 0.45,
+    SpeedWindowFactor = 0.002,
+    AccelWindowFactor = 0.0001,
+    MaxWindow = 0.7,
+    MinWindow = 0.25
+}
+
+local IsParrying = false
+local LastClick = 0
+local LastBallHit = nil
+
+local velocitySamples = {}
+local lastSampleTime = 0
+
+local function FindBlockButton()
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then return nil end
+
+    local hotbar = playerGui:FindFirstChild("Hotbar")
+    if hotbar then
+        local block = hotbar:FindFirstChild("Block")
+        if block and block:IsA("GuiButton") then
+            return block
+        end
+    end
+
+    for _, child in ipairs(playerGui:GetDescendants()) do
+        if child:IsA("GuiButton") then
+            if child.Name == "Block" or child.Text == "Block" then
+                return child
+            end
+        end
+    end
+
+    return nil
+end
+
+local function ClickBlock()
+    local btn = FindBlockButton()
+    if not btn then return false end
+
+    local clicked = false
+
+    if getconnections then
+        local function fireEvent(event)
+            local conns = getconnections(event)
+            if conns and #conns > 0 then
+                for _, c in ipairs(conns) do
+                    c:Fire()
+                end
+                return true
+            end
+            return false
+        end
+
+        if fireEvent(btn.Activated) then clicked = true end
+        if fireEvent(btn.MouseButton1Click) then clicked = true end
+        if fireEvent(btn.MouseButton1Down) then clicked = true end
+    end
+
+    if not clicked then
+        pcall(function()
+            btn.MouseButton1Click:Fire()
+            clicked = true
+        end)
+    end
+
+    return clicked
+end
+
+local function GetBall()
+    local ballsFolder = Workspace:FindFirstChild("Balls")
+    if not ballsFolder then return nil end
+    local children = ballsFolder:GetChildren()
+    for i = 1, #children do
+        local v = children[i]
+        if v:GetAttribute("realBall") == true then
+            return v
+        end
+    end
+    for i = 1, #children do
+        local v = children[i]
+        if v:IsA("BasePart") and v.Velocity.Magnitude > 15 then
+            return v
+        end
+    end
+    return nil
+end
+
+local function IsTargeted()
+    if not LocalPlayer.Character then return false end
+    return LocalPlayer.Character:GetAttribute("Targeted") == true
+        or LocalPlayer.Character:FindFirstChild("Highlight") ~= nil
+end
+
+local function SendAction(isClashing, ball)
+    if IsParrying then return false end
+    local now = tick()
+    local cd = isClashing and Config.ClashSpeed or Config.NormalSpeed
+
+    if not isClashing and LastBallHit == ball and (now - LastClick) < 0.5 then return false end
+    if (now - LastClick) < cd then return false end
+
+    IsParrying = true
+    LastClick = now
+    LastBallHit = ball
+
+    ClickBlock()
+
+    task.delay(cd, function()
+        IsParrying = false
+    end)
+    return true
+end
+
+local function UpdateVelocitySamples(speed)
+    local now = tick()
+    table.insert(velocitySamples, {time = now, speed = speed})
+    if #velocitySamples > 15 then
+        table.remove(velocitySamples, 1)
+    end
+    lastSampleTime = now
+end
+
+local function GetAverageSpeed()
+    if #velocitySamples == 0 then return 0 end
+    local sum = 0
+    for _, sample in ipairs(velocitySamples) do
+        sum = sum + sample.speed
+    end
+    return sum / #velocitySamples
+end
+
+local function GetAcceleration()
+    if #velocitySamples < 3 then return 0 end
+    local first = velocitySamples[1]
+    local last = velocitySamples[#velocitySamples]
+    local dt = last.time - first.time
+    if dt <= 0 then return 0 end
+    return (last.speed - first.speed) / dt
+end
+
+local function ComputeThreat(ball, root)
+    if not ball or not root then return nil end
+    local ballPos = ball.Position
+    local playerPos = root.Position
+    local distance = (playerPos - ballPos).Magnitude
+    local velocity = ball.Velocity
+    local speed = velocity.Magnitude
+    if speed <= 0 then return nil end
+
+    local directionToPlayer = (playerPos - ballPos).Unit
+    local velocityDirection = velocity.Unit
+    local dot = directionToPlayer:Dot(velocityDirection)
+
+    return {
+        ball = ball,
+        distance = distance,
+        speed = speed,
+        dot = dot,
+        timeToReach = distance / speed,
+        velocity = velocity
+    }
+end
+
+local function AutoParryLogic()
+    if not LocalPlayer.Character then return end
+    if not IsTargeted() then return end
+
+    local ball = GetBall()
+    if not ball then return end
+
+    local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    local threat = ComputeThreat(ball, root)
+    if not threat then return end
+
+    UpdateVelocitySamples(threat.speed)
+
+    local isClashing = threat.distance <= Config.ClashDistance
+
+    if threat.distance <= Config.EmergencyRadius then
+        SendAction(isClashing, ball)
+        return
+    end
+
+    if threat.dot < 0.5 then return end
+
+    local timeToReach = threat.timeToReach
+    if Config.PingBased then
+        local ping = 0
+        local netStats = Stats:FindFirstChild("Network")
+        if netStats then
+            local serverStats = netStats:FindFirstChild("ServerStatsItem")
+            if serverStats then
+                local dataPing = serverStats:FindFirstChild("Data Ping")
+                if dataPing and dataPing:IsA("NumberValue") then
+                    ping = dataPing.Value / 1000
+                end
+            end
+        end
+        timeToReach = timeToReach - ping * Config.PingBasedOffset
+        if timeToReach < 0 then timeToReach = 0 end
+    end
+
+    local avgSpeed = GetAverageSpeed()
+    local accel = GetAcceleration()
+
+    local window = Config.BaseWindow + avgSpeed * Config.SpeedWindowFactor + math.abs(accel) * Config.AccelWindowFactor
+    window = math.clamp(window, Config.MinWindow, Config.MaxWindow)
+
+    if timeToReach <= window then
+        SendAction(isClashing, ball)
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        AutoParryLogic()
+    end)
+end)
