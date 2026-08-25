@@ -1,0 +1,183 @@
+-- Blade Ball Auto Parry (Mobile UI)
+-- С кнопкой на экране для включения/выключения
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+
+-- НАСТРОЙКИ
+local ParryKey = Enum.KeyCode.F          -- Клавиша парирования (не меняй)
+local ParryRange = 25                    -- Дистанция срабатывания
+local Enabled = false                    -- По умолчанию выключен
+
+-- СОЗДАНИЕ UI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer.PlayerGui
+ScreenGui.Name = "AutoParryGUI"
+
+-- Главный фрейм (контейнер)
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 200, 0, 200)
+MainFrame.Position = UDim2.new(0.85, -100, 0.5, -100) -- Правая сторона экрана
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+MainFrame.BackgroundTransparency = 0.2
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+-- Скругление углов
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 20)
+UICorner.Parent = MainFrame
+
+-- КНОПКА ВКЛ/ВЫКЛ (круглая)
+local ToggleButton = Instance.new("ImageButton")
+ToggleButton.Size = UDim2.new(0, 100, 0, 100)
+ToggleButton.Position = UDim2.new(0.5, -50, 0.5, -50)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- Красный (выкл)
+ToggleButton.BackgroundTransparency = 0.3
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Parent = MainFrame
+
+-- Скругление кнопки
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(1, 0) -- Полный круг
+ButtonCorner.Parent = ToggleButton
+
+-- Текст на кнопке
+local ButtonLabel = Instance.new("TextLabel")
+ButtonLabel.Size = UDim2.new(1, 0, 1, 0)
+ButtonLabel.BackgroundTransparency = 1
+ButtonLabel.Text = "OFF"
+ButtonLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+ButtonLabel.TextSize = 24
+ButtonLabel.Font = Enum.Font.GothamBold
+ButtonLabel.TextScaled = true
+ButtonLabel.Parent = ToggleButton
+
+-- Маленькая надпись сверху
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, 0, 0, 30)
+TitleLabel.Position = UDim2.new(0, 0, -0.2, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "⚡ PARRY"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextScaled = true
+TitleLabel.Parent = MainFrame
+
+-- Текст статуса
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, 0, 0, 30)
+StatusLabel.Position = UDim2.new(0, 0, 1, 0)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "DISABLED"
+StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+StatusLabel.TextSize = 16
+StatusLabel.Font = Enum.Font.GothamBold
+StatusLabel.TextScaled = true
+StatusLabel.Parent = MainFrame
+
+-- ФУНКЦИЯ ОБНОВЛЕНИЯ КНОПКИ
+local function UpdateUI()
+    if Enabled then
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 255, 50) -- Зеленый
+        ButtonLabel.Text = "ON"
+        StatusLabel.Text = "ENABLED"
+        StatusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+    else
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50) -- Красный
+        ButtonLabel.Text = "OFF"
+        StatusLabel.Text = "DISABLED"
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
+end
+
+-- ОБРАБОТЧИК НАЖАТИЯ НА КНОПКУ (для телефона и ПК)
+ToggleButton.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+    UpdateUI()
+    
+    -- Вибрация на телефоне (если поддерживается)
+    if UserInputService.TouchEnabled then
+        task.wait(0.05)
+        -- Небольшая анимация нажатия
+        ToggleButton.Size = UDim2.new(0, 90, 0, 90)
+        ToggleButton.Position = UDim2.new(0.5, -45, 0.5, -45)
+        task.wait(0.1)
+        ToggleButton.Size = UDim2.new(0, 100, 0, 100)
+        ToggleButton.Position = UDim2.new(0.5, -50, 0.5, -50)
+    end
+end)
+
+-- Также нажатие на весь фрейм (для удобства)
+MainFrame.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+    UpdateUI()
+end)
+
+-- ФУНКЦИЯ ПАРИРОВАНИЯ
+local function PressParry()
+    if not Enabled then return end
+    if not Character or not Character.Parent then return end
+    if Humanoid.Health <= 0 then return end
+    
+    UserInputService:SetKeyDown(ParryKey)
+    task.wait(0.05)
+    UserInputService:SetKeyUp(ParryKey)
+end
+
+-- ПОИСК БЛИЖАЙШЕГО МЯЧА
+local function GetNearestBall()
+    local Ball = nil
+    local ClosestDistance = ParryRange
+    
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and (v.Name == "Ball" or v.Name == "Handle") then
+            local owner = v:FindFirstAncestorOfClass("Model")
+            if owner and owner:FindFirstChild("Humanoid") and owner ~= Character then
+                local distance = (v.Position - Character.HumanoidRootPart.Position).Magnitude
+                if distance < ClosestDistance then
+                    ClosestDistance = distance
+                    Ball = v
+                end
+            end
+        end
+    end
+    return Ball, ClosestDistance
+end
+
+-- ОСНОВНОЙ ЦИКЛ
+RunService.Heartbeat:Connect(function()
+    if not Enabled then return end
+    if not Character or not Character.Parent then return end
+    if Humanoid.Health <= 0 then return end
+    
+    local Ball, Distance = GetNearestBall()
+    
+    if Ball then
+        local Velocity = Ball.AssemblyLinearVelocity
+        if Velocity.Magnitude > 10 then
+            local DirectionToPlayer = (Character.HumanoidRootPart.Position - Ball.Position).Unit
+            local DotProduct = Velocity.Unit:Dot(DirectionToPlayer)
+            
+            if DotProduct > 0.3 and Distance < ParryRange then
+                PressParry()
+            end
+        end
+    end
+end)
+
+-- ПЕРЕСОЗДАНИЕ UI ПРИ СМЕРТИ
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    Humanoid = Character:WaitForChild("Humanoid")
+end)
+
+-- НАЧАЛЬНОЕ СОСТОЯНИЕ
+UpdateUI()
+
+print("✅ Auto Parry с кнопкой загружен! Нажми на круглую кнопку на экране.")
