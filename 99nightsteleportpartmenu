@@ -1,311 +1,629 @@
--- Код создает перетаскиваемое меню с переключателем и кнопкой удаления
-local CoreGui = game:GetService("CoreGui")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local Player = Players.LocalPlayer
-
-if CoreGui:FindFirstChild("XenoToggleMenu") then CoreGui.XenoToggleMenu:Destroy() end
-
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "XenoToggleMenu"
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size, MainFrame.Position = UDim2.new(0, 220, 0, 160), UDim2.new(0.5, -110, 0.5, -80)
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
-
-local TopBar = Instance.new("Frame", MainFrame)
-TopBar.Size, TopBar.BackgroundColor3 = UDim2.new(1, 0, 0, 30), Color3.fromRGB(25, 25, 25)
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 8)
-
-local ToggleButton = Instance.new("TextButton", MainFrame)
-ToggleButton.Size, ToggleButton.Position = UDim2.new(1, -20, 0, 40), UDim2.new(0, 10, 0, 45)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
-ToggleButton.Text = "Status: OFF"
-
-local DeleteButton = Instance.new("TextButton", MainFrame)
-DeleteButton.Size, DeleteButton.Position = UDim2.new(1, -20, 0, 35), UDim2.new(0, 10, 0, 105)
-DeleteButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
-DeleteButton.Text = "Закрыть / Удалить"
-
--- Логика перетаскивания
-local dragging, dragStart, startPos
-TopBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch then
-        dragging, dragStart, startPos = true, input.Position, MainFrame.Position
+baza,v1,alpha,__,_ = 'Protected By Baza Obfuscator | baza2000ultrapro', function()end, true, 1, 0
+local function __verify_env()
+    if type(math) ~= "table" or type(math.floor) ~= "function" or type(string) ~= "table" or type(string.char) ~= "function" or type(table) ~= "table" or type(table.concat) ~= "function" then
+        error("Security integrity violation: standard environment tampered.", 0)
     end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType.Touch) then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    if getrenv and type(getrenv) == "function" then
+        local ok, renv = pcall(getrenv)
+        if ok and type(renv) == "table" then
+            if renv.setmetatable and setmetatable ~= renv.setmetatable then
+                error("Security violation: runtime hook detected on metatable subsystem.", 0)
+            end
+            if renv.rawget and rawget ~= renv.rawget then
+                error("Security violation: runtime hook detected on table primitive.", 0)
+            end
+        end
     end
-end)
-TopBar.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType.Touch then dragging = false end end)
-
--- Переключатель логики
-local isEnabled = false
-
-local function targetCommand()
-    
-    local character = Player.Character
-    if not character or not character:FindFirstChild("HumanoidRootPart") then
-        print("❌ Character not found!")
-        return
+    if debug and type(debug.getinfo) == "function" then
+        local inf = debug.getinfo(math.floor)
+        if inf and inf.what and inf.what == "Lua" then
+            error("Security violation: hook detected on math primitives.", 0)
+        end
     end
-
-    local targetPosition = CFrame.new(805, -62, 860)
-    local itemsFound = 0
-    local itemsMoved = 0
-    local itemsCounted = {}
-    local targetName = "Lava Eel"
-    
-for _, item in ipairs(workspace.Items:GetChildren()) do
-    if item.Name == targetName then
-                -- Handle different item types
-                if item:IsA("BasePart") then
-                    if item.Anchored then
-                        item.Anchored = false
-                    end
-                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                elseif item:IsA("Model") then
-                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
-                    if primaryPart then
-                        if primaryPart.Anchored then
-                            primaryPart.Anchored = false
-                        end
-                        if item.PrimaryPart then
-                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
-                        else
-                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                        end
-                    end
-                end
-                
-            end
-        end
- local targetName = "Lionfish"
-    
-for _, item in ipairs(workspace.Items:GetChildren()) do
-    if item.Name == targetName then
-                -- Handle different item types
-                if item:IsA("BasePart") then
-                    if item.Anchored then
-                        item.Anchored = false
-                    end
-                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                elseif item:IsA("Model") then
-                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
-                    if primaryPart then
-                        if primaryPart.Anchored then
-                            primaryPart.Anchored = false
-                        end
-                        if item.PrimaryPart then
-                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
-                        else
-                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                        end
-                    end
-                end
-                
-            end
-        end
- local targetName = "Tyre"
-    
-for _, item in ipairs(workspace.Items:GetChildren()) do
-    if item.Name == targetName then
-                -- Handle different item types
-                if item:IsA("BasePart") then
-                    if item.Anchored then
-                        item.Anchored = false
-                    end
-                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                elseif item:IsA("Model") then
-                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
-                    if primaryPart then
-                        if primaryPart.Anchored then
-                            primaryPart.Anchored = false
-                        end
-                        if item.PrimaryPart then
-                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
-                        else
-                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                        end
-                    end
-                end
-                
-            end
-        end
- local targetName = "Cooked Lava Eel"
-    
-for _, item in ipairs(workspace.Items:GetChildren()) do
-    if item.Name == targetName then
-                -- Handle different item types
-                if item:IsA("BasePart") then
-                    if item.Anchored then
-                        item.Anchored = false
-                    end
-                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                elseif item:IsA("Model") then
-                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
-                    if primaryPart then
-                        if primaryPart.Anchored then
-                            primaryPart.Anchored = false
-                        end
-                        if item.PrimaryPart then
-                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
-                        else
-                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                        end
-                    end
-                end
-                
-            end
-        end
- local targetName = "Rifle Ammo"
-    
-for _, item in ipairs(workspace.Items:GetChildren()) do
-    if item.Name == targetName then
-                -- Handle different item types
-                if item:IsA("BasePart") then
-                    if item.Anchored then
-                        item.Anchored = false
-                    end
-                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                elseif item:IsA("Model") then
-                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
-                    if primaryPart then
-                        if primaryPart.Anchored then
-                            primaryPart.Anchored = false
-                        end
-                        if item.PrimaryPart then
-                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
-                        else
-                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                        end
-                    end
-                end
-                
-            end
-        end
-local targetName = "Old Radio"
-for _, item in ipairs(workspace.Items:GetChildren()) do
-    if item.Name == targetName then
-                -- Handle different item types
-                if item:IsA("BasePart") then
-                    if item.Anchored then
-                        item.Anchored = false
-                    end
-                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                elseif item:IsA("Model") then
-                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
-                    if primaryPart then
-                        if primaryPart.Anchored then
-                            primaryPart.Anchored = false
-                        end
-                        if item.PrimaryPart then
-                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
-                        else
-                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                        end
-                    end
-                end
-                
-            end
-        end
-local targetName = "Broken Microwave"
-for _, item in ipairs(workspace.Items:GetChildren()) do
-    if item.Name == targetName then
-                -- Handle different item types
-                if item:IsA("BasePart") then
-                    if item.Anchored then
-                        item.Anchored = false
-                    end
-                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                elseif item:IsA("Model") then
-                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
-                    if primaryPart then
-                        if primaryPart.Anchored then
-                            primaryPart.Anchored = false
-                        end
-                        if item.PrimaryPart then
-                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
-                        else
-                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                        end
-                    end
-                end
-                
-            end
-        end
-local targetName = "Bandage"
-for _, item in ipairs(workspace.Items:GetChildren()) do
-    if item.Name == targetName then
-                -- Handle different item types
-                if item:IsA("BasePart") then
-                    if item.Anchored then
-                        item.Anchored = false
-                    end
-                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                elseif item:IsA("Model") then
-                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
-                    if primaryPart then
-                        if primaryPart.Anchored then
-                            primaryPart.Anchored = false
-                        end
-                        if item.PrimaryPart then
-                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
-                        else
-                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                        end
-                    end
-                end
-                
-            end
-        end
-local targetName = "Revolver Ammo"
-for _, item in ipairs(workspace.Items:GetChildren()) do
-    if item.Name == targetName then
-                -- Handle different item types
-                if item:IsA("BasePart") then
-                    if item.Anchored then
-                        item.Anchored = false
-                    end
-                    item.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                elseif item:IsA("Model") then
-                    local primaryPart = item.PrimaryPart or item:FindFirstChildOfClass("BasePart")
-                    if primaryPart then
-                        if primaryPart.Anchored then
-                            primaryPart.Anchored = false
-                        end
-                        if item.PrimaryPart then
-                            item:SetPrimaryPartCFrame(targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5)))
-                        else
-                            primaryPart.CFrame = targetPosition * CFrame.new(math.random(-5, 5), 2, math.random(-5, 5))
-                        end
-                    end
-                end
-                
-            end
-        end
 end
-task.spawn(function()
-    while true do
-        if isEnabled then
-            pcall(targetCommand)
-            -- 300 секунд = 5 минут. Для теста можете временно заменить на 5 или 10 секунд
-            task.wait(10) 
-        else
-            task.wait(0.5)
-        end
+__verify_env()
+
+local LuaFunc, WrapState, BcToState, gChunk, bytes;
+local _ = 0
+local __ = 1
+local ___ = 2
+local ____ = 3
+local _____ = 4
+local ______ = 256
+local _______ = 65536
+local ________ = 16777216
+local _________ = 131071
+local __________ = 262143
+local FIELDS_PER_FLUSH = 50
+local Select = select;
+
+local _dump_trap = {}
+setmetatable(_dump_trap, {
+    __mode = "kv",
+    __index = function(t, k) return t end,
+    __pairs = function() return function() error("Memory dump blocked by Baza Obfuscator.", 0) end end,
+    __tostring = function() return "DUMP_POISON_TRAP" end
+})
+_dump_trap[1] = _dump_trap
+
+local CreateTbl = (table.create) or function(_) return {} end;
+local Unpack = unpack or table.unpack
+local bxor = (bit32 and bit32.bxor) or function(a, b)
+    local r, bv = _, __
+    while a > _ or b > _ do
+        if (a % ___) ~= (b % ___) then r = r + bv end
+        bv = bv * ___
+        a = math.floor(a / ___)
+        b = math.floor(b / ___)
     end
-end)
+    return r
+end
 
-ToggleButton.MouseButton1Click:Connect(function()
-    isEnabled = not isEnabled
-    ToggleButton.BackgroundColor3 = isEnabled and Color3.fromRGB(50, 180, 50) or Color3.fromRGB(180, 50, 50)
-    ToggleButton.Text = isEnabled and "Status: ON" or "Status: OFF"
-end)
+local function DecStr(val)
+    if type(val) == "table" and val.e then
+        local p = val.p
+        local l = val.l
+        local k = val.k
+        local chars = {}
+        for j = __, l do
+            chars[j] = string.char(bxor(bytes[p + j - __], k))
+            k = (k * 17 + 53) % ______
+        end
+        val.s = table.concat(chars)
+        val.e = nil
+        return val.s
+    elseif type(val) == "table" and val.s then
+        return val.s
+    end
+    return val
+end
+local function Pack(...)
+    return {
+        n = Select('#', ...), ...
+    }
+end
+local function Move(src, First, Last, Offset, Dst)
+    for i = _, Last - First do
+        Dst[Offset + i] = src[First + i]
+    end
+end
 
-DeleteButton.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
+local function BAnd(a, b)
+    local result = _
+    local bitval = __
+    while a > _ and b > _ do
+        if (a % ___ == __) and (b % ___ == __) then
+            result = result + bitval
+        end
+        bitval = bitval * ___
+        a = math.floor(a / ___)
+        b = math.floor(b / ___)
+    end
+    return result
+end
+local function LShift(x, n)
+    return x * ___ ^ n
+end
+local function RShift(x, n)
+    return math.floor(x / ___ ^ n)
+end
+local function BOr(a, b)
+    local result = _
+    local shift = __
+    while a > _ or b > _ do
+        local abit = a % ___
+        local bbit = b % ___
+        if abit == __ or bbit == __ then
+            result = result + shift
+        end
+        a = math.floor(a / ___)
+        b = math.floor(b / ___)
+        shift = shift * ___
+    end
+    return result
+end
+
+local function CloseLuaUpvalues(B, N)
+    for i, uv in pairs(B) do
+        if uv.N >= N then
+            uv.m = uv.M[uv.N];
+            uv.M = uv;
+            uv.N = 'm'
+            B[i] = nil;
+        end;
+    end;
+end;
+local function SenLuaUpvalue(B, N, X)
+    local Prev = B[N]
+    if not Prev then
+        Prev = { N = N, M = X }
+        B[N] = Prev;
+    end;
+    return Prev
+end;
+local function NormalizeNumber(value)
+    if type(value) == "number" and value % __ == _ then
+        return math.floor(value)
+    end
+    return value
+end
+
+function BcToState(Bytecode, charset, k_xor, k_rot, pad)
+    local lut = {}
+    for i = __, 85 do lut[charset:byte(i)] = i - __ end
+    
+    local byte_len = math.floor(#Bytecode / 5) * 4 - pad
+    bytes = CreateTbl(byte_len)
+    local d_pos = __
+    local str_len = #Bytecode
+    local byte_fn = string.byte
+    local cur_key = k_xor
+    local rot_step = k_rot
+    local bxor = (bit32 and bit32.bxor) or function(a, b)
+        local r, bv = _, __
+        while a > _ or b > _ do
+            if (a % ___) ~= (b % ___) then r = r + bv end
+            bv = bv * ___
+            a = math.floor(a / ___)
+            b = math.floor(b / ___)
+        end
+        return r
+    end
+
+    for i = __, str_len, 5 do
+        local c1, c2, c3, c4, c5 = byte_fn(Bytecode, i, i + 4)
+        local val = ((((lut[c1] * 85 + lut[c2]) * 85 + lut[c3]) * 85 + lut[c4]) * 85 + lut[c5])
+        
+        local b4 = val % ______; val = math.floor(val / ______)
+        local b3 = val % ______; val = math.floor(val / ______)
+        local b2 = val % ______; val = math.floor(val / ______)
+        local b1 = val % ______
+        
+        bytes[d_pos] = bxor(b1, cur_key); cur_key = (cur_key * 13 + rot_step) % ______
+        bytes[d_pos + __] = bxor(b2, cur_key); cur_key = (cur_key * 13 + rot_step) % ______
+        bytes[d_pos + ___] = bxor(b3, cur_key); cur_key = (cur_key * 13 + rot_step) % ______
+        bytes[d_pos + ____] = bxor(b4, cur_key); cur_key = (cur_key * 13 + rot_step) % ______
+        d_pos = d_pos + _____
+    end
+
+    local Pos = __
+    local function gBits8()
+        local Val = bytes[Pos]
+        Pos = Pos + __
+        return Val
+    end
+    local function gBits16()
+        local Val1, Val2 = bytes[Pos], bytes[Pos + __]
+        Pos = Pos + ___
+        return (Val2 * ______) + Val1
+    end
+    local function gBits32()
+        local Val1, Val2, Val3, Val4 = bytes[Pos], bytes[Pos + __], bytes[Pos + ___], bytes[Pos + ____]
+        Pos = Pos + _____
+        return (Val4 * ________) + (Val3 * _______) + (Val2 * ______) + Val1
+    end
+
+    local function gChunk()
+        local Chunk = {
+            n = gBits8(),
+            c = gBits8(),
+            d = gBits8(),
+            x = {},
+            D = {},
+            V = {}
+        }
+        local num_inst = gBits32()
+        Chunk.x = CreateTbl(num_inst)
+        for i = __, num_inst do
+            local Data = gBits32()
+            local Sco = gBits8()
+            local Type = gBits8()
+            local Inst = {
+                m = Data,
+                S = Sco,
+                A = gBits16()
+            }
+            local Mode = {
+                b = gBits8(),
+                c = gBits8()
+            }
+            if (Type == __) then
+                Inst.B = gBits16()
+                Inst.C = gBits16()
+                Inst.s = Mode.b == __ and Inst.B > 0xFF
+                Inst.a = Mode.c == __ and Inst.C > 0xFF
+            elseif (Type == ___) then
+                Inst.F = gBits32()
+                Inst.g = Mode.b == __
+            elseif (Type == ____) then
+                Inst.f = gBits32() - _________
+            end
+            Chunk.x[i] = Inst
+        end
+        local num_const = gBits32()
+        Chunk.D = CreateTbl(num_const)
+        for i = __, num_const do
+            local Type = gBits8()
+            if (Type == __) then
+                Chunk.D[i - __] = (gBits8() ~= _)
+            elseif (Type == ____) then
+                local Left = gBits32()
+                local Right = gBits32()
+                local IsNormal = __
+                local Mantissa = BOr(LShift(BAnd(Right, 0xFFFFF), 32), Left)
+                local Exponent = BAnd(RShift(Right, 20), 0x7FF)
+                local Sign = (-__) ^ RShift(Right, 31)
+                if Exponent == _ then
+                    if Mantissa == _ then
+                        Chunk.D[i - __] = Sign * _
+                    else
+                        Exponent = __
+                        IsNormal = _
+                        local raw = math.ldexp(Sign, Exponent - 1023) * (IsNormal + (Mantissa / (___ ^ 52)))
+                        Chunk.D[i - __] = NormalizeNumber(raw)
+                    end
+                elseif Exponent == 2047 then
+                    if Mantissa == _ then
+                        Chunk.D[i - __] = Sign * (__ / _)
+                    else
+                        Chunk.D[i - __] = Sign * (_ / _)
+                    end
+                else
+                    local raw = math.ldexp(Sign, Exponent - 1023) * (IsNormal + (Mantissa / (___ ^ 52)))
+                    Chunk.D[i - __] = NormalizeNumber(raw)
+                end
+            elseif (Type == _____) then
+                local baik = gBits32()
+                if baik == _ then
+                    Chunk.D[i - __] = ""
+                else
+                    local s_key = gBits8()
+                    local s_pos = Pos
+                    Pos = Pos + baik
+                    Chunk.D[i - __] = { e = true, p = s_pos, l = baik, k = s_key }
+                end
+            end
+        end
+        local num_protos = gBits32()
+        Chunk.V = CreateTbl(num_protos)
+        for i = __, num_protos do
+            Chunk.V[i - __] = gChunk()
+        end
+
+        for _, v in ipairs(Chunk.x) do
+            if v.g then
+                v.D = Chunk.D[v.F]
+            else
+                if v.s then
+                    v.L = Chunk.D[v.B - ______]
+                end
+                if v.a then
+                    v.R = Chunk.D[v.C - ______]
+                end
+            end
+        end
+        return Chunk
+    end
+
+    return gChunk()
+end
+
+function LuaFunc(State, Env, n)
+    local x = State.x;
+    local V = State.Z;
+    local v = State.v;
+    local Top = -__;
+    local SenB = {}
+    local X = State.X;
+    local z = State.z;
+    while alpha do
+        local Inst = x[z]
+        local S = Inst.S;
+        local C = Inst.C;
+        local A = Inst.A;
+        local B = Inst.B;
+        local D = Inst.D;
+        local F = Inst.F;
+        z = z + __;
+
+        if (S <= 19) then
+            if (S <= 8) then
+                if (S <= 3) then
+                    if (S <= 1) then
+                        if (S == 0) then
+                            X[Inst.A] = X[Inst.B];
+                        elseif (S == 1) then
+                            local _v = DecStr(Inst.D); X[Inst.A] = (type(_v) == "number" and _v % 1 == 0) and math.floor(_v) or _v
+                        end
+                    else
+                        if (S == 2) then
+                                    X[Inst.A] = Inst.B ~= 0
+                                    if Inst.C ~= 0 then z = z + 1 end;
+                                    
+                        elseif (S == 3) then
+                                    for i = Inst.A, Inst.B do X[i] = nil end;
+                                    
+                        end
+                    end
+                else
+                    if (S <= 5) then
+                        if (S == 4) then
+                                    local Uv = n[Inst.B]
+                                    X[Inst.A] = Uv.M[Uv.N]
+                                    
+                        elseif (S == 5) then
+                                    X[Inst.A] = Env[DecStr(Inst.D)]
+                                    
+                        end
+                    else
+                        if (S == 6) then
+                                    local N
+                                    if Inst.a then
+                                        N = DecStr(Inst.R)
+                                    else
+                                        N = X[Inst.C]
+                                    end
+                                    X[Inst.A] = X[Inst.B][N]
+                                    
+                        elseif (S == 8) then
+                                    local Uv = n[Inst.B]
+                                    Uv.M[Uv.N] = X[Inst.A]
+                                    
+                        end
+                    end
+                end
+            else
+                if (S <= 12) then
+                    if (S <= 10) then
+                        if (S == 9) then
+                                    local N, m
+                                    if Inst.s then
+                                        N = DecStr(Inst.L)
+                                    else
+                                        N = X[Inst.B]
+                                    end
+                                    if Inst.a then
+                                        m = DecStr(Inst.R)
+                                    else
+                                        m = X[Inst.C]
+                                    end
+                                    X[Inst.A][N] = m
+                                    
+                        elseif (S == 10) then
+                                    X[Inst.A] = {}
+                                    
+                        end
+                    else
+                        if (S == 11) then
+                                    local A = Inst.A
+                                    local B = Inst.B
+                                    local N;
+                                    if Inst.a then
+                                        N = DecStr(Inst.R)
+                                    else
+                                        N = X[Inst.C]
+                                    end
+                                    X[A + 1] = X[B]
+                                    X[A] = X[B][N]
+                                    
+                        elseif (S == 12) then
+                                    local Lhs, Rhs;
+                                    if Inst.s then
+                                        Lhs = DecStr(Inst.L)
+                                    else
+                                        Lhs = X[Inst.B]
+                                    end
+                                    if Inst.a then
+                                        Rhs = DecStr(Inst.R)
+                                    else
+                                        Rhs = X[Inst.C]
+                                    end
+                                    X[Inst.A] = NormalizeNumber(Lhs + Rhs)
+                                    
+                        end
+                    end
+                else
+                    if (S <= 14) then
+                        if (S == 13) then
+                                    local Lhs, Rhs;
+                                    if Inst.s then
+                                        Lhs = DecStr(Inst.L)
+                                    else
+                                        Lhs = X[Inst.B]
+                                    end
+                                    if Inst.a then
+                                        Rhs = DecStr(Inst.R)
+                                    else
+                                        Rhs = X[Inst.C]
+                                    end
+                                    X[Inst.A] = NormalizeNumber(Lhs - Rhs)
+                                    
+                        elseif (S == 14) then
+                                    local Lhs, Rhs;
+                                    if Inst.s then
+                                        Lhs = DecStr(Inst.L)
+                                    else
+                                        Lhs = X[Inst.B]
+                                    end
+                                    if Inst.a then
+                                        Rhs = DecStr(Inst.R)
+                                    else
+                                        Rhs = X[Inst.C]
+                                    end
+                                    X[Inst.A] = NormalizeNumber(Lhs * Rhs)
+                                    
+                        end
+                    else
+                        if (S == 19) then
+                                    X[Inst.A] = not X[Inst.B]
+                                    
+                        end
+                    end
+                end
+            end
+        else
+            if (S <= 68) then
+                if (S <= 28) then
+                    if (S <= 23) then
+                        if (S == 22) then
+                            z = z + Inst.f
+                        elseif (S == 23) then
+                                    local Lhs, Rhs;
+                                    if Inst.s then
+                                        Lhs = DecStr(Inst.L)
+                                    else
+                                        Lhs = X[Inst.B]
+                                    end
+                                    if Inst.a then
+                                        Rhs = DecStr(Inst.R)
+                                    else
+                                        Rhs = X[Inst.C]
+                                    end
+                                    if (Lhs == Rhs) == (Inst.A ~= 0) then z = z + x[z].f end;
+                                    z = z + 1
+                                    
+                        end
+                    else
+                        if (S == 26) then
+                                    if (not X[Inst.A]) ~= (Inst.C ~= 0) then z = z + x[z].f end
+                                    z = z + 1
+                                    
+                        elseif (S == 28) then
+                                    local A = Inst.A;
+                                    local B = Inst.B;
+                                    local Params;
+                                    if B == 0 then
+                                        Params = Top - A;
+                                    else
+                                        Params = B - 1;
+                                    end;
+                                    local RetB = Pack(X[A](Unpack(X, A + 1, A + Params)))
+                                    local RetNum = RetB.n;
+                                    if C == 0 then
+                                        Top = A + RetNum - 1;
+                                    else
+                                        RetNum = C - 1;
+                                    end;
+                                    Move(RetB, 1, RetNum, A, X)
+                                    
+                        end
+                    end
+                else
+                    if (S <= 33) then
+                        if (S == 30) then
+                                    local A = Inst.A;
+                                    local b = Inst.B;
+                                    if B == 0 then        
+                                        b = Top - A + 1;
+                                    else
+                                        b = B - 1;
+                                    end;
+                                    CloseLuaUpvalues(SenB, 0)
+                                    return Unpack(X, A, A + b - 1)
+                                    
+                        elseif (S == 33) then
+                                    local A = Inst.A;
+                                    local Base = A + 3;
+                                    local Vals = {X[A](X[A + 1], X[A + 2])}
+                                    Move(Vals, 1, Inst.C, Base, X)
+                                    if X[Base] ~= nil then
+                                        X[A + 2] = X[Base]
+                                        z = z + x[z].f;
+                                    end;
+                                    z = z + 1
+                                    
+                        end
+                    else
+                        if (S == 36) then
+                                    local Sub = V[Inst.F]
+                                    local Nups = Sub.n;
+                                    local UvB;
+                                    if Nups ~= 0 then
+                                        UvB = CreateTbl(Nups - 1)
+                                        for i = 1, Nups do
+                                            local Pseudo = x[z + i - 1]
+                                            if (Pseudo.S == 0) then
+                                                UvB[i - 1] = SenLuaUpvalue(SenB, Pseudo.B, X)
+                                            elseif (Pseudo.S == 4) then
+                                                UvB[i - 1] = n[Pseudo.B]
+                                            end;
+                                        end;
+                                        z = z + Nups
+                                    end;
+                                    X[Inst.A] = WrapState(Sub, Env, UvB)
+                                    
+                        elseif (S == 68) then
+                            X[Inst.A] = (X[Inst.B] and X[Inst.C]) or _
+                            
+                        end
+                    end
+                end
+            else
+                if (S <= 115) then
+                    if (S <= 80) then
+                        if (S == 73) then
+                            if Inst.C == 0 then X[Inst.A] = (X[Inst.B] or _) end
+                            
+                        elseif (S == 80) then
+                            X[Inst.A] = (Inst.s and Inst.L) or (Inst.B * 2)
+                            
+                        end
+                    else
+                        if (S == 85) then
+                            if Inst.A > 255 then X[Inst.A % 32] = Inst.D end
+                            
+                        elseif (S == 115) then
+                            local _j = (Inst.A * 3 + Inst.B) % 256; if _j == 999 then z = z + 1 end
+                            
+                        end
+                    end
+                else
+                    if (S <= 181) then
+                        if (S == 164) then
+                            X[Inst.A] = (type(Inst.D) == 'string' and #Inst.D) or Inst.A
+                            
+                        elseif (S == 181) then
+                            local _m = Inst.m; if _m == -1 then Top = Top + 1 end
+                            
+                        end
+                    else
+                        if (S == 220) then
+                            if Inst.B == 255 then SenB[Inst.A] = { N = Inst.A, M = X } end
+                            
+                        end
+                    end
+                end
+            end
+        end
+        State.z = z;
+    end;
+end;
+function WrapState(V, Env, Upval)
+    if type(LuaFunc) ~= "function" or type(BcToState) ~= "function" then
+        error("Anti-tamper violation: VM state corrupted.", 0)
+    end
+    local SafeEnv = (type(Env) == "table" and setmetatable({}, { __index = Env, __newindex = Env, __metatable = "Locked" })) or Env
+    local function Wrapped(...)
+        local Passed = Pack(...)
+        local X = CreateTbl(V.d)
+        local v = { b = _, B = {} }
+        Move(Passed, __, V.c, _, X)
+        if (V.c < Passed.n) then
+            local Start = V.c + __
+            local b = Passed.n - V.c;
+            v.b = b;
+            Move(Passed, Start, Start + b - __, __, v.B)
+        end;
+        local State = {
+            v = v,
+            X = X,
+            x = V.x,
+            Z = V.V,
+            z = __
+        }
+        return LuaFunc(State, SafeEnv, Upval)
+    end;
+    return Wrapped;
+end;
+
+return WrapState(BcToState('Svm6?Pq)^Ca3/t;$%&B?]KilcW(B0+y+?a_X-oOhSW[E>W0^2#<Tv>S$My@Y]vf@LWjlHNyG:unX-U.[Svsk(pMOd?aYXVc$IpRU]^4e=WJ3KhykCj%P=5GDS3-CSPqJH*aC3^)$Uq@3]0*5kWX)e>yG:u(Xj&@MS6@3ePG9/s<[3?P$iU$?]FtZuWDr/&r6]A>Xi:COSc5^NP2md3a3/tk$iGIj]0*5;4]O=MydALeJOg8NSd_(PPq)E?aRV3[Pgc0^]AL5#W(]h)ybs[7Xc4BASvsknPqrXu<F2[>$fdgI]KilcW(By_rvph7X-oRCSW[E>WG%3n<kbWH$B;lL]vf4ZWjlHgyG:unX-U.6r-uV#Pj)W9<[?()$SnRl]^4e+WJ3KIyS*>-4o7e!S3_y+PJcmsa2/jN$Uq@N]0*5kWX)egy$W-<X/KQuSvskVPcsV0yjxeg$iUY*]06fIX/xQ#y$9.>X/>AwS8LMJpc6Jma3/oV$iAv<roD#HWDhW9y7-tnJ$4O6S6gc(PqFUha3/mu$y,Qy]GskVWDh,Prog?5X-KC&Sv677Pq)!I<T?En$cTS)]0*5#WKhAZy3A0LX-og*SvLft$eb^t<FH-#$JFZ,]L;tIWJd]Cy7uM#X-og2S=7V!PjrEI<F+oC$e2rb]0s%_WXh^%yG:9jX2<sMSdq07P/3o9a<6K+$Uq@:]0*5kWX)U9<U3>lXj=GtSF?VmP/3[QQ7AGk$iU$)]6ZOu$QEH[rv;b_X]I*NS/3jIPqFXma3H4)$iUOD<+;O84-%Fmydf4ZX-62vSv6P5PqFU-a3/tjX2O=^]7467WJd&9yPJ3pX]RP-Sv67APq)!2<;n:j$c=_t]7yr]WG%CIy7ut1X-KYuSvsSDXV&H6<SF)x$)OO#]0-FhWXhUiy7uM>X-o<v54:%Hpi0N-a3!MV$9F*t]3c9#WJ3F.y7-BZWPP>^S5L5#P2P.?abkKY/U9sH]0sPkWwi3M<e)+CXj=GtS420)P/:99Q7AGk$iU$)]F&^24]JUhrv;b_X]_(lS/3j&PqFXma3HWb$iUOD]AS%n4-%FmyGE_JXil5eS:Vl>Pq)^.a3+0e$TH[h]G67HW<MAnyG_1DX]RP]Sv67#Pq)!9<_,l6$cTS)]74viWR,Kny7ut_X-KYFSvsSIpF/xS<[Ql_$iKgI]vf6UWjlHCyG:unX-U.[rrvY%pi%msabCH3$uEK*iuT?TWJ3KBy54[%p^QnjS3R(1PclHNagPj:$iV*@]0s1;WJ369<TuOwXqXS)Sv(8TPJBK30:P0B$iVIW]7yyd$a9lvrvZD+X-ogIS6$>0xt+w*a3/o7$)kxj<_FLb4-#]ty5y^4J$#O&5F-Y=Pq)!ua3/tjX2O+0]7467WXFX?yPJ3pX]RP-Sv67APq)!2<;n:j$c=_t]7yr]WGppUy7ut1X-KYBSvsSDX>AX[<SF)x$M4B:]0M.6WXhUiy7uM8X-o<v--tOtpi0N-aRidA$9F*t]3c9#WJ3F.y7-)9$N/(;S3R(1P(nSUaj#2;AB4;]]0*7_W(%V;SgwTUX89<oS6^9cPqW4ea3HKd$i>C!]0*dKl)l;erv?TdX]y63Sc5Lep?;fha3/t($iG*sS3uVhWwi3ByY4m!XBBvc?T2aBPqF/*<[POb4hI:D]$_q1WJ3[uyPVq&qaP^?Svs57P;0]959n>w$2]<o]vkdEWZiwv!yGGdX-og-SvsT>4]G*K<[PN+$ifBi])95%WJd--y7ui*X-ob>SgKrjP8#)t<[Q.-$;TO#]0s%xWXh!6yG:u#(i9fsS34*5P/ph.a2/w:$Uq,h]0*5kWX)UN<eGtTXqXStSTk/qPVGqha3-uG$i>C&]0*d[4h*uFylm27XqXTgSjFRmPqFXma3HWS$iUO8]DhRMWwc)tyGDA>XI)isSS@b>Pq)!*a3+^IXSw6X]$jV=W>_fcyDyC0JtIciSvs5+P;0]25uV):$2,:@]0YsGWX*xYy7ut5X-K:+SvsTvX<[T6<T5pG$M4B:])Jo1WXhU-y7uMfX-obj]A+!wP8#)ta3]AV$sbjW]K%J+WXh^=yGNC4XV_TjSd_q_P87@R<F<sD$iV*-]0s1DWJ3[85mW2cXjEe-S4Hs-P5Ov8a3HK7$i>CK]0*SD4/$vmrvvp7X]ne$SyjRsp?;f&a3/t;$iG&e<;c/<Ww,9)yAX_SX&Ln3?T2a)PqF/*<[QCBX5ue;]$jV=W>yVZyDcD>JtIciSvs5+PJ$n;5ufv3$2,:@]06%nWXMl=y7ut5X-KYmSvsTv4vy8=<T5pG$?6;w]B?4U4iv_IyG:uXX-U.U]A:VhP8c?t<,j^y$IH?vVy8<hWXhE[y3U3wp!q.DS3R(1Pq)!IajkI0AB4;]]0*7_WVi?2rv;b_X89<oSvSgkPq)en<NZ>G$iUYI]0*S[pMfIvylva+X-V*MSrf(pP/ao)a3HW$$iUO2]P#y6Wwc)tylZ:-X/SbcSv6P5PqFUBa3/)Dp;YM/]$4sGW>4qLyD2&vX-KCBSv678Pq)^v<NvUk$%DGt]K#FXWER>tr[[eHX-o<CSvLP>4[gDX<T;+d$))Zq]KgT!,a?AIyG:&TXsrG2r1vQjpi0N-aY[LU$[iy/]0s%7WXh^GyGNC6p+B_8S3n67PclHNa3krL$iV*[]0s1.WJ3[F<NyIaX/A4MS6gr>Pdj?o^4Ies$iVIr]Gw.o$a*,<ylva_X/G*oSrf(%P/ao)a3HWY$iUO2<eWyXWwc)tylZ:4X/1_pSv6P5PqFUoa3/)DX3p/P]$4sGW/N:DyDp8PX-KCBSv67=Pq)^>r/FR0$cNwm]K7^>W^0fc8YgC-X-KApSd_X6XjCh/<[Ql1$Uy)I]Z,Z<,adKsyG:uTX-ob>5sp;8P8ib]<[5<h$S#=[iCY0fWJ3Kiy5qcSqaYenS:i+rPq)!Ia3/mhABq7u]0*5_WJ3[uyGNA;X/>$hSvSgkPq)0VavD.V$iUYi]0*5#W060Hy$W-#X-M8uScVG1P2md.a3/tk$i>lV5s8o<WDODiy$!@&XK9>4T.I6pPq)E]aN.k5x4pxQ]YC=EWXh!IyG:9uJt4k9Svsk+Pq)!Ia3/M>$efI&]0(OTWJ36VrSbEkX-oguSvskVP5w0><F2[H$iA6i]BiV_WjlHlyG:unX-K3Vr50pIP8ib]<[5a5$S#=[iCY0fWJ3Kiy5qcS3lfC*S:i+rPqrX&a3/mhABq7u]0*5_WJ362-o]7nXqtL]Sv(8kPduGSa3+!7$iUYh]0*5]l)]YOrvvpGX-V**SvsSIpM8T*a3/t;$iUY9iI^#>4Mb!by5Bm,X]$v>nPUd5Pq)EWaA?do3Q4nT]3i2LWJ;llyG:uVJDR8ISvskSPq)!Iaj8?u$efI&]0QidWq1#Ty3A0SX-og&Sv67>,6?-p<4&Br$c=_y]7#M1o:nWFyG:&pXskD5Qke9kp?vHOa3]A;$iUYhi.%##WJ3[MyG:uVJ$#+XS5(1#PJilBaYmq5$Uq,]]0*5kWXh!9Qkw3fXewQgSdnL<P8_y1wL*-j$iU$4]6d9ix^TX*r[&4LX].P9SvskVpei=?a3/t>$iUY6!c#A.WjHW<y7WWkX]BteS6iNePq)!ha3/sM$iU:C?f>2/T9/&6aUF$DX2UG$Svsu;_fF*5a3/t#$[&2Zi9M&KWT/6]UL:>Rj;+onfZ$?Qc@LGRa3/t#$BD:dML)lJ!>O*DT5kLo4UVDsSvskVPqBoH<NZXk$iU:c<udsaWJ3[u+KhJhX-o<wAk4:o:^eIi7,c5$$i!QRU?]Sb0P<Dt]jC,]vQE-a$rWB628^B+nC6i45V908]0*5nekQ@M&C3&:qov@$5JIYCfRCW6Q[@HrA8MQIU7ef*]_Iq+!y0L/JR1KuSyLW#Pq)!Ia3q)]3D#cQ]BX+Wi2qxl_rnBI7-$3QixD@APq)!Ia3J6(3QC*M])2y[x_iB#f<Qw7X-ogDIYL1Opei+*a3/)OP#^y^]0*SIeKL<yyG:u6^vA)$),rxLVYU37Q_!>d$BZ[SBn-,Xn1BYaa8hw*X-ogIGi@gYPq)!Q81!xF4EH-*-6uYkWJ.wF]*Q/wX-ob#<i*D5Pq)!FS=:@6]+xe*;kFXFWJ3[uyG:uXJDR%u:k;A0=4i-fQ7fq/$hKIyyLg_GWJ3F74[+-jav].SSvsS>y6AhIQ_W/5$,3K5HjK.E74__o!y0L/J:/v()FPxA1W$[:/pMYqcs.FWY-r6?u2lg*K8?%Lp8=V;cjf&vm<)n_jtuJr$iUYh,Wst)WJ3[uyk/)-Jt4VC)PBTLVDeW[a3/td_Tf)*A>6=MWJ3[uyDSx+q<yPISZEy,YS2)V!yP]-,5xrS]0*5J;;yS>?2^3gc9;^/L<+p6pei+*a3Je<PVkPo]09P<$3Sn%rSb!nIs/<%Tu*Y5PxR7EHDv1n:A)BkA9Dd*WJlS-w=:8<^9IdtSvsSq!,$uXQgBP?V:&]Y]0*5#P%o_(0eP$UilxD+=(TR)5Q6VZMci2t3QB(CMYy+s9a2^EyG:uVFZRBTSvsc(x)E:Q<u&#>$ioQh]0*7HWX)qV]*;WfXj&@MSvskVP5SF[<FHtn$iU$?]06jhP=TZ[y$/[nX/fiiS;N;SPc!tga3H[k$iG*W<u4cq4cOT&y7WWTXhts;S6$JVPq)Eha3+^DWXuM>]G(8nWDrcCrIeW,X]nq.SvskVPq)!oyD1-xl*E4?]KgJ#WHlAKy7-okX-oghSvsS9P#?Yj<FlUk$efI*]LJafW8a-IyG:unX-og2SE]@6Pj8+?<[?XS$>e]N]740=WJ3[hyG:9]J$#DdS5xQnPqFUh<I-FL$][Vt]0*5#WJ3[6yDk?vX/>$hSv67#P/a]Ca39f/$ir?4K79$CoNLUY<0lE7^T39/I*NCTPqtm3cxO.)FSP6S#kF=(,oM-uy27jU:Mp>EYU9-XSW6!ta3/mT]8k.A5MVZ*WJ>uMJ6XoR,[>7WT99F;Pq)!Ia3J8U$ie6s]GLPHWJ3[u6YC!JU!8)gSvtXtpMwf8SEIKj$efI*]0*5HxpGh4!1t:#X/>flSvWh9$u_]8<T?Ek$%&B?T7n7j,aUoIy7utnX/5K.])r#@PjJX*<F2!kOZ;V?hV7:rWJ3E&r6kc6WH8C[S5(1HPq)!hT7#EFAqRQh]0sPn@,<@QyG:E+X/>$hSvskV7NOR#jtuJr$ieq,]A1X8Xr_?jy$W-HX-o%9MbB]Xxt.&ua3/oH$iL4+S/R8YWDFU&y$Won3lfC;T99v>Pq)U&a3UjC$epYh-6u$T4]kXhTpe(hJX_Q&Sv6%kxtla$yDpV93QB(C-6uYk,%SNh!CEfJX-KjCT$$J>$_UZQQ+tf;3QBe.!SF;2,m2DAyG:-nX-sVurhv$Dx(ou9QlXw;xwnf0i_#r(WXh,Cr5u<wp9Y_8T7#r>PjJUhHySd1:4=5R]G(1V,ay/JajaV9JXn795F-On,a(9aavNA;$i>YI?fk,3X=KZQ!C[w>JXnnC!c7lFxtl3.a3/[k$i!I[<_F0<W)dtuy0TGcxl6KaT77Z;PqFEI<N;;M4IQxD?f>2qWDF?AHy+@Pc[X5OS5SP#1Rk!pyDaR]l*E4?iy]rV=6=T,^L8eXX/dYI5FBiGW0^l5a3/t#$efI&MxX?X,oooIy7=-P_QVT_cV#9J^,<-;DZYCU=6!9@RJ]PRqs-:DfX_t,X-ob,LK2N&m-2IKa3Uxmu:NxIJa3;7WJ.5vZI8!eX-o<L;j1%,YQNkOQ7<Vq$uw]uFibN[WDFEI4[PmPX-obLq*G)CPq-J:A5:#M3wP@A]MA&7*c2JXyG:&H(M=V-S@-:;P/3WIa3/oH$iV9VyRXZF4]8d?yG:uVJ$^7%S56kHPq)E*a3HvhJR2gj]GSgkWDJ>MruvlMXiL1gSv61nPqrX,]Wt[3l*E4?]0LQSWHH+;yG=:VX-oOhSv6=6X-W-><Fb!n$e<iM]#:2pWJvblyG:uVX-ogoagGOApei+*a3HWk$uD#0]068TWJ3[uyG:9bX-og-S5S%HPq)!IaYEJY$My43]0*5HWJ3FlyG:uXqaYe.Y,T%)].+u9a3cT3OXCy@su,(H)B6oe!y0L/JYMw+Z=>sw_S^&OYEZv?9;$ma7ayASAg<>[y7uMj-nmK.kCN)XxtllCa3/t#$iUguyRX^6WJ3[IyGNGUZ&m>j>,[06Pq)!Ia3/+x$TZk2]0*5#,m+NCM#2;,q>PeCSv67#pemJaa3/okl*E6M4W:@3rRwnq47Mt,X-o$*SY8R_Pq)=t<F2[H$iU$&h6<int=>n<yG:-nX2wxuSvsJ>PjJX&%,8dFX6:(n]GSYSWD[94yG3ekX-0*iS5(1#pM8T*fTMbpg%WW%]0*7HWJ$c(y$WuVX/>C&;O<BFA#HpVav:&#$iVI*h@*t?WDFU*r6H[nrDAj=rh?$wPj1=i<F2t>$iUA0]AxgS,m+b.0%h*e-Z@hJ(vyP,Pq)m.<TuOk$%&si]Axgks9>qQS=KIQX/f@iS5;@PPq)]la3cAX3QB(C]0*5#X63j*y$/tVX/VysSvW99peiH&avD.V3(QL.QldK&,>ohCy$WMVX-W*6r=h4aP-aWIad]:(@b/3KMxT]XWXhKu4$(s#X-0*iT$gJ>pM8H&4DDppgiTAx]0*5#,m_y76Eo/CX-ogI8r]ABJ4!SAavN<J$i>j.I4tO,PY2F=yG:&Hq>5@3VT[RD7_pGga3J]m$fl)u!TRTt@b!pl^xCq(WPjmjS5xccPjXkea3e&rJ$xn5MxX?X4cO+?>B>dhZ&vUpSvskVPq)aoQwavo$iUYhIR=n^Aq3)o!CExqX-Kxlkh?VyPq)=tQ^<GX$iUYhhV^1Qt=>n<yG:uVX2Oy;!Ye:6=VWp.w=^&_,y5NIiy^FJWDF=ByG.f6p95q%k1ThX=<n[Ba&GXFAB_0O]GLYdWJ3@#ii^xxc[EkNHcyWE$T1:&<Flu/$efV,]0u]?,aKMI0ePCec:98:(q6UF5q^9ka3/[k$%uO5i_ccHm3c-N^xCLqA,H1%T^chZPjJ+]a3LkHxn31W?MRHcoF%-OSj/SHX/pj$S5;sxPq)rCavD.HO$0Fb?MRHe5do5%47?jMX-o$*SvoCgPq)XMQ^<GX$iUC*DnjC$oFgMgy$!Wnq>+ds]Abt;=VWp.%H@d,OW<?/hV7:rWJAgHr6dgu,[oF)k1ThX=VW2CS#9kK$e3jA]GZLjWXu,gajawiq>50l5F-$TLw3rh%bVpW$iUYh]0?ixmqqckyG:uVv=Oa(ytBNPxwd9$a3HuXN6+A9]0*$_@b!p$yG:&#UsDNQV;%RyPq)U&<ThYjP@r7oMxX?(@Hu+l]HDJ6X/px3S5XHtPq-m<yDpwi3(QL.-6uCSR]rch[nCT,X-ogISvm*==1N4_a3/t#w4+%Sicm?A,aZ=by79:X/R?#]SvsY+_S^&Oa3/t#O0_C^hV7:rWJ3[ur6d8%xkA+6k1T?(=@IWta,0a(AqRyO]0sJXs+[i9yG:E+c[EkOSvskV7%WDujtuJr$ieV4]Ax+vJPxH1K8?%ZqoK@KiiOU6x(ZDN<F2T+$irKhro=r6oF%o:0epekx+BOCT^c?UPjJ+]a3U<K,c-ip?eo+/oT*WNrov0PX/f_FS5;sxPqsG%avD.HN6GrR?MRHeguA!C47?wiX-o$*SYwa[xw>thjD!;r3s;6l!a[te,>o=@y$W!5X-sVP!2+$Q+Grfb8]+;yXr0S,]G5(8WDFboyG.g%JXn1hH]IWL1W$[:(rdT:giSdY]0*PkWJ.$]yG:tTc:98:Svs7Ho[*#XDpyQ0$e<B??MRxFP5bhSK8?%L(Mt@?VT[057_pGga3c<c$%&u0]GL5#md]uO[4kTFJ^onjT779EPq4lN2a>E^ABq(C*jnXeB]7;PiT:.(JX_0OSv6FUxwn1wQlXR#:O,O3hV^x^$;DbKy$cAqX/>SYSv)JrW0clSDZYCUl*E0iS==N0WDJ)3y$,:JX-W9IT^,)X1n6U3fT)UW,:/xCi_#)eWXh9Y!CEO,Jt4kI#)*:y7_UeQS1Y-p$eAj6]GLrcWXu@rajawi/W^OY5F-On5doG4p35<?$iUYh]AxJXpkxDqK8?8UX/>VN^JD<8=@uXN<Fb+1:4H[v]0&>m,aKhCyG:MHUs<*>V;%RyPqixl<Fx8kA8Mg*i_ccVBc$5pT4J_vJtq79S5(;XPq)Wj<NZEnYVbi$i.%;V,_R>F!CESeX-KGAT99*P$.?lpwrO0qYVbFu90y84-X]?5yG:MHX-WF<S5(QSP-aWua3/u(OX!JlhV7:rWJlt.r6HtnxU9Y=HcyKZ=<ntij0r!QO7img]G(re,aKkeKdco?X-ogID$PXo=Y1-YQ^A6y$i>wC]A2E5,m+R90ePCeyaCq+(q6UF5q^9ka3/[k$%&(,]0*$_mdi.RyG:uVU!qgvV;%RyPq)2s<T?0^,iTg=*q4!U@b!XO[k@NKZ&vt7SvskVPq)aoaj85W$iUYh]0*1nY3,f&^L8sZX/dj.#)sgiPjJ!ID?5YUbP?Xji>*^6,aZ=by79_ZUu,V0T^,)X_:7o:fT)UWP&[6(i_#?ZWXI3N!CcewJt4kIn*.He7_UeQ]Hg&K$e3<l]GLrcWJ$=rajawicT=1N5F-$TWPD#K<Fl&q$epw.]K.PI,;lal0%hicE2:Mpy4-CCxw5b:a3#:/AqR8fiy]^#s^aS<6gs]0Wb1Q,S5Pe2PjJ?Ya3eIbJ$xn5?eo+c4cOT&4D$0fE-EVkSvskVpM8mlr2kH$:4T1Y]GLvUY3o1v^L8sZX/GysHcywK1?KP5a3/t#2P)TJMdRQe@b/Eay79:XX2Cp-T7#Z#1W$KY82v8Lg[U12904v?WJ3E&r6HTxX-@@tHcyKLPq)!Ij)=<=O0C,b]0*hy4]kc0Tnr0@c[EkNk1T71GJ6fn%bVX)$iUYh]GZo@W06xPyG:uVX2<B?k1Y(@=<+/<a3H&($e8TiiuD,VoF%W:JY]UNr$.k%(vyF*Pq)/*<T?pP$ie6s*q4!ZWJ3[u6gtRfU!8)gSvtt&pMwf*T?#fx:nN%Y*q4M^Ll7YH[nCE)X-ogISvm*=P5wRfa3/t#$iUC*M*?)D@,wtwy$^AXU.sOby*wvx_:7t:Q^gW=GJ0u*I4)$tWJ3[uyG:;3q1[b1SvskV+GrwRk<n6P3(Y*b]0s;(MN7,dy$WuV/W^Y3;O<BFJU&EhavNxe$i>_Ah@]nC,;lalv(wryE2:MpTDf2[xwd2@a3HDfAqg>.iy]^#s+)xg6gs]0$k:sXS5PqjPjJ?Ya3/^hJ$xn5&t$:y4cO+?]J,>JX/fx[S5(JJPqMxoQlXf(NSAJO9AjgWxw&/j!CL>pX-0nFT7_2(x(o&I82vQZO019a]G*c(WDJ3oy$,jeX-FV#])J,M+A1<b<NZXk-nWgC904Z]WJ3[ur6d+Jl,lLJnZK+/PjJ]3(qo5%giTGS]0*PkWDFOqr2VO[X-ogInZK=/AB%kHQl=SZ$efyt]0hFv$;[>F0iZgUcTx)*iiO[Wx(ZDN<F2Xd$irKh!:U3WoF%o:0ePOZPj2[#S5x;qPjJ3@a3/o;Aqj%&&t$AroF%oNp3ae2E-ESSSvs1npM2^iavD.HY@#CAML)lJ,TL?+!1sUxX/Vs]Svs>$A*qvajD!JrO$0)<yARV$WDX]Fy$WdxX-Fe;T7#Z#+A1RRDpFiegi9Bs90F6UWJ3E&yG3UgX-oCMH%_UZPq)U&nW3d.:O^#w]G(Qkm3egS<NHgVc[E5:;O3QBr?dLc$H*=Y$iUYh]APK,Q?!4&yG:uVwabX]r-uq#Pj1H&<F2US$iUQI-6uQnoNL/3!I0(J,>,JHT^c)cPjJUIa3JED4yPV2M&abJ@,xENMx=!4q>PBNSv6Zq5j_AHa3HE5Ygms$]AxQn-X,Jp47?<]X-ogIkCN_)7mc2;a3/t#_I#p)y4-.X,aZpRy79_ZZ&K-P]JJ;oPq)E&DZY$ZOZ>oKhV7:rWJ$@_r6k0V,[K^tH%_UU_S^-Y]ZmYj$e3<l]GETsWJ$=rajawicT=1N5F-$TbAgCn%bV>t$iUYh]0?ix,y^L1yG:uVZ=QDQaK*X,xw5DOa3#wUYg[!E]0*$_m3cMOyG:uVU!q$^V;%RyPq)!I<T?->,S<=v*q4Ee@,Qt)im==#Jtq6OS5(C7Pqs>v]H0xF:nN%Y*jnNkxpA)4!1t(ZX/Vs]SvW&HA&(+pDpFic:O,8:<i/SHWDJmAy$WdxX-oRCT7#Z#+0h_gDpFieE-S]F904riWJ3E&r6G*iJXn1hnZK+c=VW=$ahR.sAB10,]GLYdWJ3@qi]ZUQU.i)g#)*w^$k3Ul<F.9j$efV,]0uiC,aKMIKB/kEc:98:(6bg_5q^CNa3/[k$iLjb]0*%Sm3cMOyG:MHo[)^.n?MovPjkH*DZYf5(MedI*q4Ee)?x;G6YCWcU!8)gSvtNKpMw7#T?#G_:nN%Y*q4Uc$yBwDy$cAqX/VG[Sv)JrW0clSDZYCUl*E0i[w86*)Uu57yG:uVX-@yoHS9gMPq)!IN?#Y%xl(^Fi_#?ZWXINOvQ[]>X-@@tH%_UZPq)Eh2Ch,^O0C,b]0*1n4]Snjif$w=cT=1:Hcy!UXEIj8<FlMJ$e%tc]0hJrP5bhS0iZgZ(Mt4M%8O4&GLW1+a3/t#$iee@M,;etWJ3[u/ynGaALW$lT77?ZPqF9:w=[0]$ie6s?MRHeWJ3[u6gsMwU!8)gSvskVpMwn2i]HQj:nN83M&A;_xOG;(!CEVZX-K(N#JHAuPq)=tDpFie$iUYhh/;uut=>n<yG:dpX2OU8a#h3o1W$[YD?S5.A&oa,iy^CPWDF=ByGNYAWR$_E#)*Ry+0&i9TXXoeAB1yW]GLYdWJ$X@TF@.^eKeFb#JL:!WbP&P<F.h8$efV,]K.<4,aKMIKq21Lc:98:f93=Y5q!I:a3/[k$fCdji_ccHslJwb^xCLqx7ZZ:T^/*fPjJ+]a3U<,,/mw<*-YWZmv8wgroZLpX/fV@S5;sxPqsG2avD.HRCy3a?MRHegsgNe47MDcX-o$*SvsfIPq)XMjD!Jy$iUC*?MZTQoFg<iy$!WnU.)Q1])J,M1W$[:<NZ>TOZ;G]hV7:rWJY3:r6S+KX/>gIn*.HeG&wO2!C_<vAqRe:]0s^ctE*uQ!_ASX/W^Y3(YRQ,JU&,CavNxe$i>_Ai_#(f,;l.uv(wryU!q3Q<sX],Pj=m[<F%:c$i!4rS/CZ]oT*K:rSbUTXr[?,S5PL%PjJ,la3J0qABq(C&(v&EB]7;PiTs(VJX10,Svv4fxwn1pQlXR#NSAJOhV^x^$;&E,y$/38X/>SYSv)/jW0clS8]+krl*E4?(vdE4-X]9TyG:uVX2OF.-]K$A1W$K3<F%:c=/x@DM&3H!WDr2t0ex<nX-,ucnPdpcPq)U&2.CT>O0C,b]KCpXWDFU*^*r@J/H+IAPOx*:A&QhwQl=f/$ep<C]09lj4cOXh^xCeJJDR%ui_nQjxw5lAa3HuX3Qma@r<]^4@Hud$^xCnVg[KS4(vyJBPq)U&a3Jkr$efs]M&abqWJ3]lv9akqU!8)gSv)3.pMp3nM3pso:O,g3*jnD#s9>VavsSv!X/d_3nPG4g_c_;Ta3/t#17BF@k2xL3@b//gy79xUX2Am#kCNm>+0h_g$,7H:E-S]F904riWJ3E&r65-@X-@@tn*.>UPq)!Ij)xtDO0C,b]0?I14]d$Qk:asoc:98YH%_t^)4G7K%bVHs$iUYh]0?ixW06xPyG:uVX-oY&w5x9n=@u[a<FbM(O$r75]GL5#oF%W:[4kTFAJuBvT77?ZPqFhY2aqaQABq(C?eo=/B]7;PTpfn9JX_L:Sv6^cxwd,WQlXR#O$0FbhV^x^XrWDPy$/b2X/>SYSvoCbW0clSwhk@cl*E0i]H-apWDX?4y$,:JX-sJ/T^,)X+GrjbfT)UWPh>8Vi_H*pWXh3W!CcepJt4kI#8P-E7_UeQ]Hin,$eA<K]GLrcWJ$_jajawieKeFg5F-On-XL&fp35:i$iUYh]A7:JpkxDq0ePCcX/>SYwjL#w=@u[a<Fb+1:OWy!*5NOiWJ3[uZQ&Jx3k3x/k112rPqF9:<Tm;hAqj%&&t$Armv8Rbp3ae2E-ESSSvs1npMfrxa3/>_:O,gY]0*5#t=mAs6g(^yX-,HSSYb6^JWO-,DpFic:n:r->Kr#*)Uu7+yG:uVX/VJPS/<-WPq)!I<T?/Tqr4o,MxkDEWXI3Ny$!,9qaYJu#)*:ySt33+47K4fgiT_5]0*Pk4]GrxyG:E+c:98:SvskV7_Uo4jtuJr$iej^]Ad3nq%$Xx0%h*cc:9#<[+*_HGLW%1a3/t#$iee@])e&WWJ3[uyG:MH3uB*QkhhH!PjkF.jDe@E,%!Bp?eo+/m3cxi>Bd=&Z&v[1SvskVPq)aAQ(>mm$iUYh&(vML3+DSW!Ie4EX-KV:xvm48PjJ!I8]+5EbP?Xjy*1?n,aUp@y7u=fUuK^(T^,)X+A1RRfT)UWJXt#vi_HifWXhl4!Cq=XJt4kIH]IWL7_UeQ<Fc.($eAS,]GLrcWJ.$Iajawiedfrb5F-$TX6qQl<F.?D$epw.]0*>,,;lal6@V3KE2:MpTD<aKxwddta3H+=Aqg>Ciy]^#trR6w6gs]0$Tu4(S5P0pPjJ?Ya3/KHJ$xn5IR=(K4cOT&9,wINE-LH:SvskVpMwJZ!>!wRN6GrO]GZ0%g[cYF47?wiX-o$*S5;o$pkjoja3/t#Y@HI$QlaE&,>m2Ny$W/7X-W*KrIl%21n6E3whk_SA&o=siy^CPWDFTiyGNYA,S=4^#)*Ry+0hnaS5Mn$$eAj6]GZ@PWJ.a(!C[<#edfZRn*.>U55ZS_p3daU$ieI?]A1SV,aKMIvQ-Jrqov@$iiBj)x(UDW<F2Xd$irv$!YX7yslJjbKB/JyPj9jqS5P(8PjJ3@a3/o>Aqj%&IR=V0oF%oNpjeRsE-LTYSvs1nPq-mga3/KSY@#$3]0*1n:O>R.0eQP0X/G**nZy3B4/tIuDpFB/bPmW1X^H.o]>)DTyG:uVX2<kp/3gdhPq)!Iqux$]PjxkX]GS5(WD43OyG$qu(Mt*&krFlJ=<HDliyK[&AB_nl]GL1#WXu985tA<[q>50.k1kNcq>Qk%Q^AVc$i>wC9G(thWXhXM!I0(JX2<*&9)7@p5q^,7a3/t#3QBl+IpIYCWJ3[u&kIQGP&[,.T77]UPqFhY%b#ePX5Buf]0*7noT*&avM_yvU!8)gSvB._pM2]IT?7x1Y@#$A?MRdqXok1my$/b2X/#MeSvoCbW0clSwhk@cl*E0i%AS<k)Uu1_yG:uVX-@yoTXRwoPq)!I2>*]^,a_1fi_#)eWXIl:^Lb;bX-@@tnZKdePq)!Ij)x[aO0C,b]0*5#4]d2;TUlY8c:9Q3kh&J+qC39hQl=_e$efyt]K.P8$;ET[0%h*c/W!rMTW$!+x(Up@<F2Xd$iUaJ!YEk!s^an<v(wF^WGooAS5Pe2PjJ3@a3L+CAqj%&&w5tLoF%oN4D[rsE-L>NSvs1npMwgVavD.HN6GrRML)lJxpo+t!1sXpX/Vs]SvW&JA*nr<8cl1LNSArb<MxiJWDXm6y$WdxX-oO9T7#Z#7uj4wDpFier$mn_90FycWJ3E&yG.ArX-oCMnZKdePq)U&*3qCl:O^5a]G(QkoT]dG<NHgVc:9Q3;O3Ot7%W#3jtuJr$ic>k]AdgIq%$E_0%h*cc:9gA<!BtpPj=m[<F23j$i!4rS/CZ]oT*K:rSbUTGd:>n>,FCsPq)!Ia3/+x:UFo5]0*5#&hG4XTw>T[JX_L:Sv6ve+G/:ua3/>_Y@#$3]0*7HtV#0w6g(^yX-oY&SYaR6Ax-2Pwhk@/:O,OArIPuxWDX]Fy$@CtX-W6E])J,M1n6EY<NZHS)^(/nI4tImWJ3[uyG:>=qIG++SvskVnSZtTa@>pNAqOy,]0sr/@,wAuyG:E+U.i)<SvskV7_UU0jtuJr$iUYh]AdjFA*;Gj0%hi//R?%tTP:[exwd2@a3#RcN6f%A]0*$_s^anayG:uVUFGvVV;%RyPq)3W<T?mxP@k8,&t$:roF2o4QOsHPJtJ0WS5(C7PqMxASx0hONSAcO&w5T#Av5c:!1s>fX/Vs]Svo8PqYfD!82v8ZNY[JR]LkQ,WDJ3oy$WdxX-sdFT7#Z#7yMyQDpFie-Hcae90FL/WJ3E&r6HFjJXn1h>gD(K=VW=$TXT[cAB1@m]GLYdWJ$X,TFc-yUuBaQVm](vWbQ-p<FlNf$efV,]K.<F,aKMIvs(F!c:98:pgLPc5q^Oba3/[k$ir>I]0*%SslJjgyG:MH:RDe^n?i,GPjkH*8clwdJ$xn5&t$:y4cOd*vM+8iU!8)gSvsFepM8/p<F2t#O$0Fbu:fs[,_4uK!CL/xX-0(WVmo[Wx(mN.8]+5Eg%-tfy*_3>,aUp@y7u=fJXpv4T^,vV+A1RRj)xF^WP?0p]G5VDWDF9:yG3Uj$[-G5#JL.ypeipMro!bp$eAwv]GL;XWX9$A!_ASXeA&;O(YRQ,JZKfIav:=%$iV_6i_#(%,;l.u6@V3KU!q3Q<sTmWPj=h,<F%:c$i!F8S/CZ]mv8RbrSb!nr$mH)(vr4ZPq)!I<T?uZq10kL&t$AEWDF3,n$q+@/R*ggS55*_+09F4a3c*m3s;6l]0*1ntVGI>6g(^yX-[0(S5H[T1RS>lQ9VnX$iUYha&HOQ,>mNAy$,AXX-of65F-8H_S^MNad-&VAdpwQi_#hLWXINO!yfJ@4>#*4HcyKZ_S^W$p3aUFgiTST]0*1nWXu@yy$W[Sq>50lSvscX7a*R$jtuJr$iZv;]Ax%(3O8&@v(w^y/W!F&V.UOA7.aS<<FbN%3s;%R&l[1?WJ3[u?sGy=qcEGbk1=1_PqF?3<T-$#3QB#I&w5tL]mpb74D[rsE-L>NSvs1npM8N-a3/>_O$0,g]0*5#t=o[66g(^yX-@6sSYwffqSy.@jD!JrY@#PbIWdCW)UIn$yG:uVX-@yoS/<-WPq)!Ia3/Wn@)o]hM&3drWDrmlv(:6>X/>gI#)*:yG&wO2a-f:QAqOy,]0m4ftE9(W!_ASXeKevb(YRQ,A#-KVav:dp$iVSFi_X$W,;l.uKB/kEU!q3QrI+#PPj=Fv<F%:c$iLj8S/CZ]s+)_<rSbUT$;?7pS5PqjPjJ,la3UjAABq(C*-Y[ZB]7;PTPC*hJX1L4Svv02xwd,4QlXR#R1IaQhV^x^Xr!bpy$/pPX/>SYSvo.6W0clS82v8Ll*E4?9)&K+-X]YOyG:uVX2axOMb?,b+0h_b<F2af@),!xM&3drWDr2tv(ww%cch-SSvskVV&RCqQU,JE3(3Im]0sr/4]fBI!C[<#edfZRH]IoE55ZS_p3daU$ieI?]APsGWJ3d)v(w^!X-ogIV;cF17_pGga3cSy$%&IfaEH5%s^an<0%h_GL$Yxl>,[RJPq)!I<F28,$[?J%]0*5#4]kH*!u$l+q>P$sSv6^cPj>C9Q+tjVNSAJOWS[C:-Kl(+47M=ZX-o$*SYQBdPq)=tjD!Jy$iUYhhV^J%t=>n<yGO5&X2wp.QTtc0+GrfbjD!,6Gqn>.I4tA(WJ3[uyG:>=J$HvpSvskVPq)U&w1%8WYgvQt]G(#(s^$g8TnkqWeKeFbnZ0,GbA];X%b#;($iUYh]0?]q,I96_yG:uVeKe^RQt2F)=<_Xma3#:/QV$F#]GL5#mv8:R[4kTFxR:Z?T7+ifPq[?[2a(i;ABq(CIR=V0B]7;Py)GwwJX1BtSvv*1xw7XCQlXR#RCy3ahV^x^PY%+Xy$/2pX/>SYSvsfhW0clS2>*hKl*E0ir]7=(WDJl@y$,:JX-F[PT^,)X7_UqafT)UWJX[5^i_#$=WXhao!Cq=(Jt4kIVQ%w!7_UeQ<FH&;$eAqs]GLrcWJ.3#ajawiU!q3Q5F-OnEhhyUp3d3/$iUYh]Ad+Lx^X&EKq21ZX/VG[pjq]_5q!I:a3/[k$ef($-]EE[WJ3[u0%hB/,;klqT^cCPPjJ2)a3JEpWprtR&(vuEs+tB9QOsU_JtJ0WS5(O5PqMxATeId<NSAcO&w5&r$e,wqy$/38X/Vq@Svs5;xw>th2>*?0:O,gY(6Q!_-X]C:yG:-nX2bruT7#Z#_[C.OQ9VVJA&K2miy^g_WDFTiyGNY$,SNLy>gDqK7ujB8S5oGl$eAGW]GZ@PWJ.a;!C[<#U!qlan*.>U5/<dsp3d=r$ieI?]0hJ6WJ3U?vQ-cyX-oY&DnmRQ14*A-<FbEkN6G*.T9tS/s^aSg[4=FJSk6c3POD$bPq)!I<T?OWM-xB&]0*5#kyF35Sj!yXX/pY9S5(Z/Pq)WI<NZEn:4T1:MxX?XJt#kn!1tqLX/>YISv)FvX<X+6DZYCe:nN5R!IGD2@b/U<y79xUE/_3&Sv68S_:7tN<T?Engiwo2904v?WJ3[u!y7?BZ#ss(SvskVNVMx7TPC9>AqOLW]0m4f)UIn@<c,N!X-oO&#JLwv7NN+DjtuJr$iL!m]A1Lqq2Y9jvQ-crU.i,Rro0VoPj=Fv<F%Bs$iLj8S/CZ]s+)_<rSbUT)Xy/l>,[:XPq)!Ia3/+xAK-)P]0*5#thn@wi+A/2JX10,Svv@p=@&68a3/>_N6G^b]0*5#t=oE06g(^yX-ogISYw#eJMZ_8jD!;EYgvQs!a[KJ,>o=@y$W/7X-sVPrh3Lb+Grfb8]_IVq:L]_iy!*fWDFTiyG$Jq,SD0!#8PME+A1jg]J[Cq$eA<K]GZ@PWJ3vC!C[<#Z=Q2wn*.>U-JTItp3dNc$ieI?]AG*u,aKMIKq21Lqov@$T4*U_x(UTt<F2Xd$iUaX!YTPrthnBD6@Va6WGK[$S5P6PPjJ3@a3L_9Aqj%&hV^f!oF%oN4GPE1E-LEgSvs1nPqsp6a3/KSN6G^b]0*1ncN5dQ0eaGdX/G**#JLfl,mY63jD!;EbPo).h/(23t=>n<yGNyKX2w5/QTt^6+GrfbjD!#LWbfEW]G5VDWD[hFyG3Uj$[-G5#JL.ypeipM>vT2XRI>FC]0*5#WJ32mK3%KMX-ogI+c6!fAd9ZDav:dp$iVn4&(Em/WJ3d)vQ-cyX-oOhV_Mf^7_pGga3/Wn$%u=@yk91^s+)_gv(wrrP<<[oS5P(8PjXkea3JTDJ$xn5&(vur4cO+?uC&dJZ&Km.SvskVPq)aow<blt$iUYh@up,<xR3X9!CL>pX-0V4khiDIPq)=t8cl1E$iUYhhV^1Qt=>n<yG:uVX2wHs!Ye:6+GrjRw=^&_JZ!h#i_HifWXhN,vQvL3X-@@t#8PMrPq)!IjWV+#O0C,b]0?@f4]d<oi2I>wedfrR#)&SYxnxrpQlxU_$efyt]0*>lXEp8O6@VNKZ=am$QwXoex(Uds<F2Xd$iLnpa*U6btrR4w6V<3v$!VG,S5P0pPjJ3@a3UY2Aqj%&h<7<yoF%oN9,$7cE-LUbSvs1npMf&6avD.HO01h<ML)lJAvP;Y!1sE=X/Vs]Svo8pqYA3rjXuryOGCha]L1OWWDJD)y$WdxX-sd[T7#Z#G&wYjDpFie-LR<Y90F4ZWJ3E&yG:)IX-oCM>gDqvPq)U&DPR4<:O!r?]G(Qkth5ahajawiedfrb5F-Yk7NNM5jtuJr$iUS3]A+mpWDF[uKB/kELpbU2i+Y^QxwdaWa3Hb2RCL&fiy]m(mv8:RF6d[,xR:FIT7+ifPq[?[av:*FABq7hIR=V0t=oyw]L;&pX/fn,S5(^ePq-mjyDpwiNY[#O-6uCSWb25py$/=xX/>flSv)@qx(mN.2aLm^g%-tfy*89H,aUTty7uH=JXpvFT^,vV7_Uqaj)xF^WPmLf]G5L%WDF9:yG3cv$[-G5Vm]nKpei+*4G5v)giS+3]0*5#4]d_OQ(/wRedfZOS5;0%YY;q-w=^M_$e<em&wS9#WJAceK8?%LX-oY&V_i+V7_pGga3Ev.$ef*iM&aN(md]uO6@VNv,St*0T^c9LPjJF.a3L>6l*EB*?MRTcW)dt9aKiu^JX_yNSv6vextYFP5^R/2:O,g3?MRp(5d)?447?jMX-oY&Sv)/gPjJTiDZYCU$iUjChr1&qt=>n<yG3Y(X2OV(!/!gw+A1<R8]+Y(OGC,.h<%RyWDE?FK8M,ve8Z:kSvskVY-=Wx![ZOl3(3i@]0m6%4]1S#!yGG>Z=Q2wPkE$N-JTItp3dNc$ieI?]A+7-WJ3d)KB/#rX-ogIV;ck87_pGga3/T1$fC;WQfRIaslJjbvQ-m6RmkwW>,[A(Pq)!Ia3/+x$[?J%]0*5#WJ3!h?w:OJ/R?8tS5S;X+0i?u<F2t#NSAJOu:fs[xw&TQ!CL>pX-0nFVm4Dfx(mN.82vQZg%-tfa@(>I,aUDWy7u22JX_%%T^,vV7uj4wj)xF^P<C$4]G50pWDF9:yG.A6$[-G5H]IoEpeipM<![>4$eAS,]GL;XWJ$cq!_ASXUuBbQ(YRQ,A#WEnav:X1$iVq@i_X$4,;l.u6gs)^U!q3QrI25pPj=]4<F%:c$iLDKS/CZ]trR4DrSb!ngi9]+(vr0ePq)!I<Tu;Zq10kL&w5tZWD[94?lH7-/R?8tS55*_+A=y8D46/i$iUYht(,&Px?7@X!Ico=X-0V4SY::hxw>th2>*?0NY[#O(6Q!_-X]C:yG:-nX2OAGSvsY++A1<ba3/t#O0_kmhV7:rWJA$Tr6S_pP&Q:<#8PME+GEy*[w9;XRI>K9]0*5#WDFRxyDkkWX-ogISYwgk@x67%Q^$!x$iVSF]G(wI,m+R96@V3KyaCq+9KP!_5q!*Ya3/[k$fCAG]0*$_slJjgyG:uVU!q%FV;%RyPqtm0<T&h(xF=6!*-YWZslJV8>-RmlZ&K[9SvskVPq)aoaj85W$iUYh]0*1n=rsVW^L8._X/dj.#)@svJ4Aa!82v8ZN6G3?%3gy()UI_CyG:uVX-@!/TtnxmPq)!I8]+7L@xFL%MxTQPWXh3WqGl@DX/>gIVm]S0G&wO2TnL_SAqO4m]0mBxtEI%C!_ASXU!qla(YRQ,,a&HQav:>=$iV(,i_q=(,;l.uvs(F!U!q3QS56J(Pj1bt<F%:c$ir>hS/CZ]t=oywrSbUTPYjY.S5PyfPjJ,la3/hpABq(CuSei[B]7;Py)fR%JX_C]Sv6YGxw7(9QlXR#bP?>8hV^x^PYgp(y$/d1X/>SYSvsPHW0clS%,8dFl*E4?4Pkte-X]QgyG:uVX2wcZimZ^R7yMya<F2px-KAFt90FL/WJ3E&y$WS/XY;52SvskV1n6/Ai!+2$AB1eF]GZI+WXu9PS#SXLeA&JOH]I+#xnx,1QlxU_$ef4-]0*>lJMqr<6@VNKZ=Q+8<FU_lPj=h,<F22P$ire>i_ccHt=oLQ0eP$Ur$y)1(vriyPq)/*<Ti_#Aqj%&h@9G^@HudAQO6X1JtJsmS5(O5PqMx$Te42bO019<hV^G0$e^RJy$/DfX/Vq@Svs5>xw>th%,8+[:O,gY(/TJm-X]gbyG:-nX-W6vSvsPT_[CARa3/WnoFy*Q?MCv+WDrX&KqwN(3Qva3#8P-LG&YGCPQ,Ix<BG0n]0*5#4]k.P=S*=&X-ogI@#ie5$cuP;<Flu/$e%&Z]09lI4cOXh0ePCeq>50l!1K[&x(Za:<F2W#$i!Iv<.)BwoT*KY0%IYL=<R]6k11DEPqF?3fF:4n$iVB]?eo+c4]kXhp8]b%E-ESSSvskVxtRL72yUXC$iUYhKL9.)A#-Fu!CLHfX-0nF>,[g@4vF4ga3/onNY[)2h6<j8t=>n<yGYlsX2bBAQT[Zv_[CAO8cl%Up9+3p]G50pWD[;UyG.A6$[-G5H]IoEpeipMI)jmlRI>!u]0*5#WJ32m!adFoX-ogI>gDV0JXm26av:=%$iVG[M&b(6WJ3d)Kq27EX-ogIV;c1Q7_pGga3/t#$fCycQNG.vslJwR^L8:+x7Z#$T^/*fPjJ2)a3U<,WpJWO*-YWZmvDyI!%q:sJtJitS5(O5Pq)4JTeB=gR1IDQIR=evX6>K$y$/pPX/Vq@SvW)9xw>thj)xv!:O,gY9)i<s-X]8<yG:-nX2wQVT7#Z#7yMyQQ9VVJq:(m1iy^Y=WDFTiyG$JJ,59qrV;c_^7_Uyw]JL*J$eAxF]GZ@PWJ3K9!C[<#LUH!2n*.>U-0Ih_p3d2L$ieI?]K.YjWJ3U?Kq27EX-oY&0TIrQ14?u)<FbEkNY@pCT9tS/slJwR[4=^(UFGh/V;%RyPqtYn<Th:AxF=sK*-YWZslJ<O]Ht]WX/fn,S5;y2Pq-mjyDpwiNY[#O-6uCSRiPCl[k9c;X-ogISvm*=_%.5Sa3/t#j1iN;a-PHD,aUDWy7up%eKH33SvsY+_[CARa3/oHOX!hahV7:rWJ3!hr6dgxW4ce^H]IoL+A1ROSVE?@$eAGW]GETsWXu,8ajawieA&JR5F-$TLwvYl%b#k>$iUYh]0?ix@LE*7yG:uV^[/1TTp*wIxwddta3HNjYgv5&]0*$_thnB8yG:uVU!q$^V;%RyPq)!I<Thg1,S<=v*-Y[U@,Qt)yWJEnJX1BtSvv6%+GXtAa3/>_R1IDw]0*5#tju2u6g(^yX-@qWSYwd@APoJa2>*h0NS$c,TZ8tW,>oTsy$W/7X-F^.<o?sU7_Ueaj)xP(,y?ZYiy^$xWDFTiyG.f,xfaubVQ%j!7.pqQ<sP(f$eAqs]GZ@PWJ$n2!C[<#Lpb/jn*.>UEhMRYp3dDZ$ieI?]AxbK,aKMIFYF>Fqov@$QwT[cx(UX-<F2Xd$iLnfa&2gD)?SQ2[4k>4$!GxWS5Ps1PjJ3@a3UYjAqj%&InEeKoF%oN9*U+3E-L[QSvs1nPqMYIa3/KSO019a]0*1n1WG3!0eaVTX/G**V;cQ?W0clS2>*hKl*E6Mh6<@St=>n<yGNxeX2aAWS5(kV7uj4w%Hip[AdM0bi_#O_WXh2s6V.W4Jt4e.Vm]S0dMgkpTnLVHAqO4m]0mBx,aqP%!_AfVU!qlaV;c_0XofEW<Fl3%$ep_3]0hJvP5bhS6Vg9K(Mt4M]LVK,Pj=?W<F2&X$i^C$iy]m(s9>(aF6d[,xOu^*T77$=PqF3,av:*[ABq7huSei[t=oyw]L5-fX/fesS5(^ePq-@vyDpwiOGC]<-6uYk-0II)47MHyX-ogISYwcZ,yEML2>*?^$efqow2T67@,Q[sy$!>_Z=OqWSvtXs1W$[:a3/WnOX[sVhV7:rWJCf.y$W!5$[uGdSvskVPjJ/hAT9!O3aiBi]m:ZvL9EE:kx8?jUuBawpU8JBT%,.UQCRJe4!1)QdD7O9r&^@tyG:uIU+aNZn*.>UEIDi9?W>$<HUdvrRh5;8,;l3.gR3xZ$iJH?SvskVP#xM*avDA>bCjC&:p17>@,x>3<SqJ9LwZ4cTw3jWPq)0KsB=dom#0lGRG=?Ca][oL!r(tkXt*lU7Oe)[H/c[Da3/t#$iL+4i_cZ>VqIN#KY$5bqov@$F@5</&&.oB-7kyMYgms$Y#$(-xS0&.0L>AMX-ogIS[9OkPq)!IaQBd?$epOB]0*SoA5+)R3+.x@bmf)=;kVI40PBjW1Zn8u&)I2388CZ;xT,els55SW*M9N_Svm9Py9EQeQ+&_X$)Wl,?n<T1fgnZSyGA%+k4^y)SvskVPe.+?a3/t#$iUYhiuJlqWn@yM1d&psJXn798+%o+_(Bp%Q+tf(/)T7vkab?<WJ.YNwfQasG?B(ykCN)Xn*Ep7b;nHV$iZP6(N8m4,8*4OaMqa>X-oa3n@mp0xspX?awL1V4k+J])CwUsWJ36Y$]RK.,1jJST977nPpTq[+NLY&#R2k&A3@[ROLCC@yGOx%iy$1f@p(i8+*DL2HOlq;$iUYh]6qBe,tVefy%rfXJKMSJ!u11j@G;+;HbT@JwIMW#]0*Srj,4_@ZVGb=KNyGEo#=/vPqrX?8]+kr3QB(CiuNF;WJ3[uyG:E7X-@@tSvskVPq)!Ij*b8MO0C,b]0*kV4]kE9yGN:>X-oOh5F-On3fWtWQ+[<>$iU$&]0*2!WXhXMyG:uVX2<i*T4Lpfx(Utu<F2[H$iUa>yRX^6WJ3[IyGNR(WGdSIS5xgkPjJ>*a3/va$iVB]]0*5#4]k>&6gW$)U!8)gSvotAPjJ!2a3/&V$iU$&]0*5#,__[4!CER>X-KYhkCl.%PjJX?<F2Kn$efI&9W0]J-X]rxyG:MHX/Vq$Z-?ubPq)!Io(!g^g%*GW9ARY4WJ3KIyGN:(X-ox3SvsSJLPHTd<NZXk$iUOUBndn+WJ3[uqP_EVX-og<-gnAB*(mjYa3/E!_Boan]0*5nWJGmryGNRXX-oxCSvskVPq)!I82v8LNYE5N]0*5#WJYlYyGNf/X-ogISvskVxtQEXQ+[w;$iU$&]0hofWJ3].y$W-#X-ogI%8kIuGL4iDa3/t#$ieLA]Jft4WJ3[uy0T.#,>9,(T^ccVPjJ/ha3JEjWZm(j]GLPnWDF,C<!#6KX/fsMS5(PHPq-iv<F2KTl*E6Miy]v;WPV:vy$/->X/>C&Sv)J^Pqrd]<F2[H3QBku[pG#6)UII8yG:uVX/V/qSjtW4Pq)!IQlX:Vx(,v;iy^J#WDFEIyG3o%P=5njS5(1HPjJK9r]3f&$eA4i]GL5>WXu-HyG:&n(Mt@?S5(1#pu*M0<Fl[V$ef**]0hJ^WX)Hiy$W-#qaY;9n$]^o=@u+$<Fb/5$epO9S/Oh9WJ3[uy$W-#,[>7WT99F;Pq)!Ia3J8U$ie6s]GLPHWJ3[uv9a)0U!8)gSvs7HpMwa0<F2KT$ef**i.%;VZ&t4[[nCDvX-ogIS5;sxP5wRfa3/t#$iUC*y$K$&WDJH*y$WonX-oSo]0,AXPq)E&av:&#g%*GW9ARY4WJ3KIyGNfcX-ox$SvsTSd8+<$E^6Gr$iUYh]4sqM@b!p$&4C>Oi9ML-qkkLOx)tjD<uN=4!hwr&*-ecGKS]XvjhJ>FX-o<Af.+85fDk)[a3/t#$[&2ZiurN/WXv6h,/+epX-ogAiscH#fNNI#+Q6Zg$iU$&]A6#>WJ;llyGXj(X-ogISvsk+PVlg:<F2[H$efI&]d?S+WjlHNyG:uHX-KYKS/aGvPjJ/ha3HWH$i>C&]K7vXWJlR)7Rx,m?c>N^SvskV','9uIh&*?Mi]-B)tsmo@,W4F[6vK0^!yrELZUec/qJX(;>V#HnkTS5dG7+_1=xPpf%2j8DwQa<gbRON:Y3A$l.C',((239 - 83) % 256),(27 + 109),2),(getfenv and getfenv(0)) or _ENV)(...)
