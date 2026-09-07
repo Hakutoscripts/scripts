@@ -1,0 +1,237 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "DroneFrontGUI"
+ 
+-- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+_G.InfJump = false
+_G.Noclip = false
+_G.Farm = false
+_G.Rainbow = false
+ 
+-- --- ЯДРО GUI ---
+local MainFrame = Instance.new("Frame", gui)
+MainFrame.Size = UDim2.new(0, 350, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -175, 0.5, -210)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+MainFrame.Active = true
+MainFrame.Draggable = true
+ 
+-- --- ВЕРХНЯЯ ПАНЕЛЬ ---
+local TitleBar = Instance.new("Frame", MainFrame)
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.BackgroundTransparency = 1
+ 
+-- Название
+local TitleLabel = Instance.new("TextLabel", TitleBar)
+TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+TitleLabel.Position = UDim2.new(0, 15, 0, 0)
+TitleLabel.Text = "DRONE FRONT"
+TitleLabel.TextColor3 = Color3.new(1, 1, 1)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 18
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.BackgroundTransparency = 1
+ 
+local BtnContainer = Instance.new("Frame", TitleBar)
+BtnContainer.Size = UDim2.new(0, 80, 1, 0)
+BtnContainer.Position = UDim2.new(1, -85, 0, 5)
+BtnContainer.BackgroundTransparency = 1
+Instance.new("UIListLayout", BtnContainer).FillDirection = Enum.FillDirection.Horizontal
+Instance.new("UIListLayout", BtnContainer).Padding = UDim.new(0, 10)
+ 
+local isMinimized = false
+local function ToggleMinimize()
+    isMinimized = not isMinimized
+    local targetSize = isMinimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 420)
+    TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = targetSize}):Play()
+end
+ 
+-- Кнопки - и X
+local MinBtn = Instance.new("TextButton", BtnContainer)
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Text = "-"
+MinBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0, 4)
+MinBtn.MouseButton1Click:Connect(ToggleMinimize)
+ 
+local CloseBtn = Instance.new("TextButton", BtnContainer)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Text = "X"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
+CloseBtn.MouseButton1Click:Connect(function() MainFrame.Visible = false end)
+ 
+-- --- ВКЛАДКИ ---
+local TabContainer = Instance.new("Frame", MainFrame)
+TabContainer.Size = UDim2.new(1, -20, 0, 35)
+TabContainer.Position = UDim2.new(0, 10, 0, 45) 
+TabContainer.BackgroundTransparency = 1
+Instance.new("UIListLayout", TabContainer).FillDirection = Enum.FillDirection.Horizontal
+Instance.new("UIListLayout", TabContainer).Padding = UDim.new(0, 5)
+ 
+-- --- СТРАНИЦЫ ---
+local Pages = {}
+local function createPage(name)
+    local frame = Instance.new("ScrollingFrame", MainFrame)
+    frame.Size = UDim2.new(1, -20, 1, -100)
+    frame.Position = UDim2.new(0, 10, 0, 90)
+    frame.BackgroundTransparency = 1
+    frame.ScrollBarThickness = 0
+    frame.Visible = (name == "Home")
+    Instance.new("UIListLayout", frame).Padding = UDim.new(0, 10)
+    Pages[name] = frame
+    return frame
+end
+ 
+local Home = createPage("Home")
+local Event = createPage("Event")
+local Misc = createPage("Misc")
+ 
+for _, name in pairs({"Home", "Event", "Misc"}) do
+    local btn = Instance.new("TextButton", TabContainer)
+    btn.Size = UDim2.new(0.31, 0, 1, 0)
+    btn.Text = name
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.TextColor3 = Color3.new(1,1,1)
+    Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(function()
+        for _, p in pairs(Pages) do p.Visible = false end
+        Pages[name].Visible = true
+    end)
+end
+ 
+-- --- ЛОГИКА ФУНКЦИЙ ---
+local function addButton(parent, text, callback)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(1, 0, 0, 40)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    btn.Text = text
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(function() callback(btn) end)
+    return btn
+end
+ 
+-- WalkSpeed
+local lbl = Instance.new("TextLabel", Home)
+lbl.Size = UDim2.new(1, 0, 0, 20)
+lbl.Text = "Walk Speed"
+lbl.TextColor3 = Color3.new(1, 1, 1)
+lbl.Font = Enum.Font.GothamBold
+lbl.BackgroundTransparency = 1
+ 
+local SliderBg = Instance.new("Frame", Home)
+SliderBg.Size = UDim2.new(1, 0, 0, 30)
+SliderBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Instance.new("UICorner", SliderBg)
+local SliderFill = Instance.new("Frame", SliderBg)
+SliderFill.Size = UDim2.new(0, 0, 1, 0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", SliderFill)
+ 
+SliderBg.InputBegan:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+        local pos = math.clamp((input.Position.X - SliderBg.AbsolutePosition.X) / SliderBg.AbsoluteSize.X, 0, 1)
+        SliderFill.Size = UDim2.new(pos, 0, 1, 0)
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            player.Character.Humanoid.WalkSpeed = pos * 100
+        end
+    end
+end)
+ 
+addButton(Home, "Infinite Jump: OFF", function(btn)
+    _G.InfJump = not _G.InfJump
+    btn.Text = _G.InfJump and "Infinite Jump: ON" or "Infinite Jump: OFF"
+end)
+ 
+UserInputService.JumpRequest:Connect(function()
+    if _G.InfJump and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid:ChangeState("Jumping")
+    end
+end)
+ 
+addButton(Home, "Noclip: OFF", function(btn)
+    _G.Noclip = not _G.Noclip
+    btn.Text = _G.Noclip and "Noclip: ON" or "Noclip: OFF"
+end)
+ 
+RunService.Stepped:Connect(function()
+    if _G.Noclip and player.Character then
+        for _, v in pairs(player.Character:GetDescendants()) do 
+            if v:IsA("BasePart") then v.CanCollide = false end 
+        end
+    end
+end)
+ 
+addButton(Event, "Auto Farm: OFF", function(btn)
+    _G.Farm = not _G.Farm
+    btn.Text = _G.Farm and "Auto Farm: ON" or "Auto Farm: OFF"
+    task.spawn(function()
+        while _G.Farm do
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local folder = workspace:FindFirstChild("Smmer")
+                if folder then
+                    for _, ball in pairs(folder:GetChildren()) do
+                        if _G.Farm and ball.Name == "SummerBall" then
+                            char.HumanoidRootPart.CFrame = ball.CFrame
+                            firetouchinterest(char.HumanoidRootPart, ball, 0)
+                            firetouchinterest(char.HumanoidRootPart, ball, 1)
+                        end
+                    end
+                end
+            end
+            task.wait(0.2)
+        end
+    end)
+end)
+ 
+addButton(Misc, "Rainbow UI: OFF", function(btn)
+    _G.Rainbow = not _G.Rainbow
+    btn.Text = _G.Rainbow and "Rainbow UI: ON" or "Rainbow UI: OFF"
+    task.spawn(function()
+        while _G.Rainbow do
+            for i = 0, 1, 0.05 do
+                if not _G.Rainbow then break end
+                MainFrame.BackgroundColor3 = Color3.fromHSV(i, 0.5, 0.5)
+                task.wait(0.1)
+            end
+        end
+        MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    end)
+end)
+ 
+-- Звезды
+local StarHolder = Instance.new("Frame", MainFrame)
+StarHolder.Size = UDim2.new(1, 0, 1, 0)
+StarHolder.BackgroundTransparency = 1
+StarHolder.ZIndex = 0
+ 
+task.spawn(function()
+    while MainFrame.Parent do
+        local star = Instance.new("Frame", StarHolder)
+        star.Size = UDim2.new(0, 3, 0, 3)
+        star.Position = UDim2.new(math.random(), 0, 1.1, 0)
+        star.BackgroundColor3 = Color3.new(1, 1, 1)
+        Instance.new("UICorner", star).CornerRadius = UDim.new(1, 0)
+        
+        TweenService:Create(star, TweenInfo.new(math.random(4, 8)), {Position = UDim2.new(star.Position.X.Scale, 0, -0.1, 0)}):Play()
+        task.delay(5, function() star:Destroy() end)
+        task.wait(0.4)
+    end
+end)
+ 
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.Insert then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
